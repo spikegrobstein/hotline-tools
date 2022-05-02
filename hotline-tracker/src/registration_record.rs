@@ -1,4 +1,4 @@
-use bytes::{Buf, BytesMut};
+use bytes::{Buf, BytesMut, BufMut};
 use macroman_tools::macroman_to_string;
 
 const REGISTRY_VERSION: u16 = 1;
@@ -73,5 +73,26 @@ impl RegistrationRecord {
             description,
             password,
         })
+    }
+
+    pub fn to_bytes(&self) -> BytesMut {
+        let mut buf = BytesMut::with_capacity(15 + self.name.len() + self.description.len() + self.password.len());
+
+        buf.put_u16(REGISTRY_VERSION);
+        buf.put_u16(self.port);
+        buf.put_u16(self.users_online);
+        buf.put_u16(self.reserved);
+        buf.put_u32(self.id);
+
+        buf.put_u8(self.name.len() as u8);
+        buf.put_slice(self.name.as_bytes());
+
+        buf.put_u8(self.description.len() as u8);
+        buf.put_slice(self.description.as_bytes());
+
+        buf.put_u8(self.password.len() as u8);
+        buf.put_slice(self.password.as_bytes());
+
+        buf
     }
 }
