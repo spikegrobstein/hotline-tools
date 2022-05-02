@@ -125,12 +125,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "hotline-bookmark"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "macroman-tools",
+]
+
+[[package]]
+name = "hotline-bookmark-cli"
+version = "0.1.0"
+dependencies = [
+ "hotline-bookmark",
+]
+
+[[package]]
 name = "hotline-tracker-client"
 version = "0.1.0"
 dependencies = [
  "bytes",
  "futures",
  "futures-sink",
+ "macroman-tools",
  "tokio",
  "tokio-stream",
  "tokio-util",
@@ -166,6 +182,10 @@ checksum = "6389c490849ff5bc16be905ae24bc913a9c8892e19b2341dbc175e14c341c2b8"
 dependencies = [
  "cfg-if",
 ]
+
+[[package]]
+name = "macroman-tools"
+version = "0.1.0"
 
 [[package]]
 name = "memchr"

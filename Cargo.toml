@@ -1,5 +1,8 @@
 [workspace]
 
 members = [
-  "hotline-tracker-client"
+  "hotline-tracker-client",
+  "hotline-bookmark",
+  "hotline-bookmark-cli",
+  "macroman-tools",
 ]

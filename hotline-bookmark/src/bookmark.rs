@@ -89,15 +89,15 @@ impl Bookmark {
 
         buf.advance(USERNAME_OFFSET - BOOKMARK_HEADER_LEN);
         let username_len = buf.get_u8() as usize;
-        let username: String = macroman_to_string(buf.copy_to_bytes(username_len).to_vec());
+        let username: String = macroman_to_string(&buf.copy_to_bytes(username_len));
 
         buf.advance(33 - username_len);
         let password_len = buf.get_u8() as usize;
-        let password: String = macroman_to_string(buf.copy_to_bytes(password_len).to_vec());
+        let password: String = macroman_to_string(&buf.copy_to_bytes(password_len));
 
         buf.advance(33 - password_len);
         let address_len = buf.get_u8() as usize;
-        let address: String = macroman_to_string(buf.copy_to_bytes(address_len).to_vec());
+        let address: String = macroman_to_string(&buf.copy_to_bytes(address_len));
 
         Ok(Self {
             username,

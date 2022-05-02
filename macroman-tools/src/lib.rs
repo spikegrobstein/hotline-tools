@@ -235,7 +235,7 @@ pub fn macroman_to_char(c: u8) -> char {
         .unwrap_or(c as char)
 }
 
-pub fn macroman_to_string(s: Vec<u8>) -> String {
+pub fn macroman_to_string(s: &[u8]) -> String {
     s.iter()
         .map(|c| macroman_to_char(*c))
         .collect()
