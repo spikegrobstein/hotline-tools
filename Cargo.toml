@@ -4,5 +4,6 @@ members = [
   "hotline-tracker-client",
   "hotline-bookmark",
   "hotline-bookmark-cli",
+  "hotline-tracker",
   "macroman-tools",
 ]

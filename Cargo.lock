@@ -140,12 +140,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "hotline-tracker"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "macroman-tools",
+]
+
+[[package]]
 name = "hotline-tracker-client"
 version = "0.1.0"
 dependencies = [
  "bytes",
  "futures",
  "futures-sink",
+ "hotline-tracker",
  "macroman-tools",
  "tokio",
  "tokio-stream",

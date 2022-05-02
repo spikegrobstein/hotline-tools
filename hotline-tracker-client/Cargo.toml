@@ -9,6 +9,7 @@ edition = "2021"
 bytes = "1.1.0"
 futures = "0.3.21"
 futures-sink = "0.3.21"
+hotline-tracker = { path = "../hotline-tracker" }
 macroman-tools = { path = "../macroman-tools" }
 tokio = { version = "1.18.0", features = ["full"] }
 tokio-stream = "0.1.8"

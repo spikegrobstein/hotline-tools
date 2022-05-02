@@ -5,8 +5,8 @@ use tokio::net::TcpStream;
 // use tokio_stream::StreamExt;
 use tokio::io::AsyncWriteExt;
 
-use crate::update_record::UpdateRecord;
-use crate::server_record::ServerRecord;
+use hotline_tracker::UpdateRecord;
+use hotline_tracker::ServerRecord;
 
 // establish connection
 // send HELO packet
