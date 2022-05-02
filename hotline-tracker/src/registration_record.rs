@@ -54,7 +54,7 @@ impl RegistrationRecord {
         }
 
         let ex_pass_len = bytes[12 + 1 + ex_name_len + 1 + ex_desc_len] as usize;
-        if bytes.remaining() < 15 + ex_name_len + ex_desc_len + ex_pass_len {
+        if bytes.remaining() != 15 + ex_name_len + ex_desc_len + ex_pass_len {
             return None
         }
 
