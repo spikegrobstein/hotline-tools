@@ -10,6 +10,7 @@ const REGISTRY_VERSION: u16 = 1;
 /// we only need to ensure that the packet is well-formed
 ///
 /// TODO: this should return an error when parsing from bytes
+#[derive(Debug, PartialEq)]
 pub struct RegistrationRecord {
     pub port: u16,
     pub users_online: u16,
@@ -108,5 +109,25 @@ impl RegistrationRecord {
         buf.put_slice(self.password.as_bytes());
 
         buf
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_parses_back_and_forth() {
+        let r = RegistrationRecord {
+            name: "Test server".into(),
+            description: "just a test".into(),
+            id: 1234,
+            ..Default::default()
+        };
+
+        let mut data = r.to_bytes();
+        let new_r = RegistrationRecord::from_bytes(&mut data).unwrap();
+
+        assert_eq!(r, new_r);
     }
 }
