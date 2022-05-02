@@ -11,21 +11,21 @@ const BOOKMARK_HEADER_LEN: usize = 6;
 const BOOKMARK_LENGTH: usize = 460; // a bookmark file is 460 bytes
 
 // these are offsets to the length byte, which precedes each value
+// todo: these should be field-size or something.
 const USERNAME_OFFSET: usize = 135;
 const PASSWORD_OFFSET: usize = 169;
 const ADDRESS_OFFSET: usize = 203;
 
-// header @ 0: magic word, version [0-5; 6]
-// username @ 135: len, username [135-168; ]
-// password @ 169: len, password [169-202]
-// addres @ 203: len, address [203-459]
-// padding
-//
-
+/// a version 1 hotline bookmark
 #[derive(Debug)]
 pub struct Bookmark {
+    /// the address for the bookmark. hostname or IP. may include port
     pub address: String,
+
+    /// the username credential. Can be blank.
     pub username: String,
+
+    /// the password credential. can be blank.
     pub password: String,
 }
 
@@ -77,8 +77,6 @@ impl Bookmark {
     pub fn from_file(path: &str) -> Result<Self, std::io::Error> {
         let data = std::fs::read(path)?;
         let mut buf = Bytes::from(data);
-
-        dbg!(buf.len());
 
         // read header
         let magic_word: Vec<u8> = buf.copy_to_bytes(BOOKMARK_MAGIC_WORD.len()).to_vec();
