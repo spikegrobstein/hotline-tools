@@ -7,6 +7,10 @@ mod client;
 use client::Client;
 use client::TrackerPacket;
 
+// usage
+// hltracker list <server>
+// --json for json output
+
 #[tokio::main]
 async fn main() {
     let mut client = Client::connect("hltracker.com", 5498).await.unwrap();
