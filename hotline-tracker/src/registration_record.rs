@@ -20,6 +20,20 @@ pub struct RegistrationRecord {
     pub password: String,
 }
 
+impl Default for RegistrationRecord {
+    fn default() -> Self {
+        Self {
+            port: 5500,
+            users_online: 0,
+            reserved: 0,
+            id: 0,
+            name: "".into(),
+            description: "".into(),
+            password: "".into(),
+        }
+    }
+}
+
 impl RegistrationRecord {
     pub fn from_bytes(bytes: &mut BytesMut) -> Option<Self> {
         // these 15s are the static portion + length bytes (12 + 3)
