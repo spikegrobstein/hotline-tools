@@ -20,10 +20,13 @@ async fn main() {
                 std::process::exit(0);
             },
             Some(Ok(TrackerPacket::Update(update))) => {
-                println!("got update: {:?}", update);
+                println!("got update:");
+                println!("  users_online:  {}", update.users_online);
+                println!("  total_servers: {}", update.total_servers);
             },
             Some(Ok(TrackerPacket::Server(server))) => {
-                println!("got server: {:?}", server);
+                println!("{} [{}:{}]", server.name, server.address, server.port);
+                println!("  {}", server.description);
             },
             Some(Ok(TrackerPacket::ResponseHeader)) => {
                 println!("connected!");
