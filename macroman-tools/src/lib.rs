@@ -1,3 +1,8 @@
+use bytes::{Bytes, BufMut};
+
+use std::convert::From;
+use std::fmt;
+
 // table lifted from: http://www.alanwood.net/demos/macroman.html
 //   Array.from($('.bord tbody').children).map((tr) => { const macno = tr.children[1].innerHTML; const unicode = tr.children[2].innerHTML; console.log(`(${macno}, '\\u{${parseInt(unicode).toString(16)}}')`)})
 pub const MACROMAN_TABLE: &[(u8, char)] = &[
@@ -235,18 +240,122 @@ pub fn macroman_to_char(c: u8) -> char {
         .unwrap_or(c as char)
 }
 
+pub fn char_to_macroman(c: char) -> u8 {
+    MACROMAN_TABLE.iter()
+        .find(|(_, unicode)| *unicode == c)
+        .map(|(char, _)| *char)
+        .unwrap_or(c as u8)
+}
+
 pub fn macroman_to_string(s: &[u8]) -> String {
     s.iter()
         .map(|c| macroman_to_char(*c))
         .collect()
 }
 
+pub fn string_to_macroman(s: &str) -> Vec<u8> {
+    s.chars()
+        .map(char_to_macroman)
+        .collect()
+}
+
+// this approach was lifted from arrayvec::ArrayString
+
+#[derive(Debug, PartialEq)]
+pub struct MacRomanString<const CAP: usize> {
+    inner: [u8; CAP],
+    len: u8,
+}
+
+impl<const CAP: usize> Default for MacRomanString<CAP> {
+    fn default() -> Self {
+        Self {
+            inner: [0u8; CAP],
+            len: 0,
+        }
+    }
+}
+
+impl<const CAP: usize> From<Bytes> for MacRomanString<CAP> {
+    fn from(item: Bytes) -> Self {
+        let mut mrs = Self::default();
+        mrs.set(&item[..]).unwrap();
+
+        mrs
+    }
+}
+
+impl<const CAP: usize> From<&str> for MacRomanString<CAP> {
+    fn from(item: &str) -> Self {
+        let mut mrs = Self::default();
+        mrs.set(item.as_bytes()).unwrap();
+
+        mrs
+    }
+}
+
+impl<const CAP: usize> From<&[u8]> for MacRomanString<CAP> {
+    fn from(item: &[u8]) -> Self {
+        let mut mrs = Self::default();
+        mrs.set(item).unwrap();
+
+        mrs
+    }
+}
+
+impl<const CAP:usize> fmt::Display for MacRomanString<CAP> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_string())
+    }
+}
+
+impl<const CAP: usize> MacRomanString<CAP> {
+    pub fn len(&self) -> usize {
+        self.len as usize
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    pub fn set(&mut self, s: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
+        if s.len() > CAP {
+            panic!("too big: {} > {CAP}", s.len());
+        }
+
+        let len = s.len();
+
+        self.inner[..len].clone_from_slice(&s);
+        self.len = len as u8;
+
+        Ok(())
+    }
+
+    pub fn as_string(&self) -> String {
+        macroman_to_string(self.as_bytes())
+    } 
+
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.inner[..(self.len as usize)]
+    }
+
+    pub fn write_to_buf<T: BufMut>(&self, mut buf: T) {
+        buf.put_u8(self.len);
+        buf.put_slice(self.as_bytes());
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
+    fn it_can_store_a_string() {
+        let mrs: MacRomanString<10> = "spike".into();
+
+        let s = mrs.as_string();
+
+        assert_eq!(s, "spike".to_owned());
     }
 }
