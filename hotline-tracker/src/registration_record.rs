@@ -36,7 +36,7 @@ impl Default for RegistrationRecord {
 }
 
 impl RegistrationRecord {
-    pub fn from_bytes(bytes: &mut BytesMut) -> Option<Self> {
+    pub fn from_bytes(mut bytes: &[u8]) -> Option<Self> {
         // these 15s are the static portion + length bytes (12 + 3)
         if bytes.remaining() < 15 {
             // not enough data for the absolute minimum size
