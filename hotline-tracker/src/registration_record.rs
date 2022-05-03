@@ -1,5 +1,5 @@
 use bytes::{Buf, BytesMut, BufMut};
-use macroman_tools::macroman_to_string;
+use macroman_tools::MacRomanString;
 
 const REGISTRY_VERSION: u16 = 1;
 
@@ -16,9 +16,9 @@ pub struct RegistrationRecord {
     pub users_online: u16,
     pub reserved: u16,
     pub id: u32,
-    pub name: String,
-    pub description: String,
-    pub password: String,
+    pub name: MacRomanString<255>,
+    pub description: MacRomanString<255>,
+    pub password: MacRomanString<255>,
 }
 
 impl Default for RegistrationRecord {
@@ -68,15 +68,15 @@ impl RegistrationRecord {
         let id = bytes.get_u32();
 
         let name_len = bytes.get_u8() as usize;
-        let name = macroman_to_string(&bytes[..name_len]);
+        let name = bytes[..name_len].into();
         bytes.advance(name_len);
 
         let desc_len = bytes.get_u8() as usize;
-        let description = macroman_to_string(&bytes[..desc_len]);
+        let description = bytes[..desc_len].into();
         bytes.advance(desc_len);
 
         let pass_len = bytes.get_u8() as usize;
-        let password = macroman_to_string(&bytes[..pass_len]);
+        let password = bytes[..pass_len].into();
         bytes.advance(pass_len);
 
         Some(Self {
@@ -99,14 +99,9 @@ impl RegistrationRecord {
         buf.put_u16(self.reserved);
         buf.put_u32(self.id);
 
-        buf.put_u8(self.name.len() as u8);
-        buf.put_slice(self.name.as_bytes());
-
-        buf.put_u8(self.description.len() as u8);
-        buf.put_slice(self.description.as_bytes());
-
-        buf.put_u8(self.password.len() as u8);
-        buf.put_slice(self.password.as_bytes());
+        self.name.write_to_buf(&mut buf);
+        self.description.write_to_buf(&mut buf);
+        self.password.write_to_buf(&mut buf);
 
         buf
     }

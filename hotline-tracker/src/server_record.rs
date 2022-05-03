@@ -1,13 +1,29 @@
-use bytes::{Buf, BytesMut};
-use macroman_tools::macroman_to_string;
+use bytes::{Buf, BytesMut, BufMut};
+use macroman_tools::MacRomanString;
+
+use std::net::Ipv4Addr;
 
 #[derive(Debug)]
 pub struct ServerRecord {
-    pub address: String,
+    pub address: Ipv4Addr,
     pub port: u16,
     pub users_online: u16,
-    pub name: String,
-    pub description: String,
+    pub reserved: u16,
+    pub name: MacRomanString<255>,
+    pub description: MacRomanString<255>,
+}
+
+impl Default for ServerRecord {
+    fn default() -> Self {
+        Self {
+            address: Ipv4Addr::new(127, 0, 0, 1),
+            port: 5500,
+            users_online: 0,
+            reserved: 0,
+            name: "Hotline Server".into(),
+            description: "".into(),
+        }
+    }
 }
 
 impl ServerRecord {
@@ -35,23 +51,28 @@ impl ServerRecord {
 
         // we have enough data, let's read the record.
 
-        let address = format!("{}.{}.{}.{}", bytes.get_u8(), bytes.get_u8(), bytes.get_u8(), bytes.get_u8());
+        let address = Ipv4Addr::new(
+            bytes.get_u8(),
+            bytes.get_u8(),
+            bytes.get_u8(),
+            bytes.get_u8()
+        );
         // eprintln!("address: {address}");
         let port = bytes.get_u16();
         // dbg!(port);
         let users_online = bytes.get_u16();
         // dbg!(users_online);
-        let _reserved = bytes.get_u16();
+        let reserved = bytes.get_u16();
         // dbg!(reserved);
         let name_len = bytes.get_u8() as usize;
         // eprintln!("name_len: {name_len}");
 
-        let name = macroman_to_string(&bytes[..name_len]);
+        let name = bytes[..name_len].into();
         // dbg!(name);
         bytes.advance(name_len as usize);
 
         let desc_len = bytes.get_u8() as usize;
-        let description = macroman_to_string(&bytes[..desc_len]);
+        let description = bytes[..desc_len].into();
         // dbg!(description);
         bytes.advance(desc_len as usize);
 
@@ -59,8 +80,28 @@ impl ServerRecord {
             address,
             port,
             users_online,
+            reserved,
             name,
             description,
         })
+    }
+
+    pub fn to_bytes(&self) -> BytesMut {
+        let mut buf = BytesMut::with_capacity(12 + self.name.len() + self.description.len());
+
+        let octets = self.address.octets();
+        buf.put_u8(octets[0]);
+        buf.put_u8(octets[1]);
+        buf.put_u8(octets[2]);
+        buf.put_u8(octets[3]);
+
+        buf.put_u16(self.port);
+        buf.put_u16(self.users_online);
+        buf.put_u16(self.reserved);
+
+        self.name.write_to_buf(&mut buf);
+        self.description.write_to_buf(&mut buf);
+
+        buf
     }
 }
