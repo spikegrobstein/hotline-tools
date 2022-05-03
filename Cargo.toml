@@ -2,6 +2,7 @@
 
 members = [
   "hotline-tracker-client",
+  "hotline-tracker-server",
   "hotline-bookmark",
   "hotline-bookmark-cli",
   "hotline-tracker",

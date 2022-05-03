@@ -162,6 +162,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "hotline-tracker-server"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "hotline-tracker",
+ "macroman-tools",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -195,6 +206,9 @@ dependencies = [
 [[package]]
 name = "macroman-tools"
 version = "0.1.0"
+dependencies = [
+ "bytes",
+]
 
 [[package]]
 name = "memchr"
