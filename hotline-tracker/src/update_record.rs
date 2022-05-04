@@ -1,4 +1,4 @@
-use bytes::{Buf, BytesMut};
+use bytes::Buf;
 
 #[derive(Debug)]
 pub struct UpdateRecord {
@@ -9,7 +9,7 @@ pub struct UpdateRecord {
 }
 
 impl UpdateRecord {
-    pub fn from_bytes(bytes: &mut BytesMut) -> Option<Self> {
+    pub fn from_bytes(mut bytes: &[u8]) -> Option<Self> {
         if bytes.remaining() < 8 {
             return None;
         }
