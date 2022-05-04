@@ -1,6 +1,10 @@
 use bytes::{Buf, BytesMut, BufMut};
 use macroman_tools::MacRomanString;
 
+use crate::server_record::ServerRecord;
+
+use std::net::Ipv4Addr;
+
 const REGISTRY_VERSION: u16 = 1;
 
 /// the data that will be parsed from or encoded to a UDP packet
@@ -104,6 +108,17 @@ impl RegistrationRecord {
         self.password.write_to_buf(&mut buf);
 
         buf
+    }
+
+    pub fn to_server_record(self, address: Ipv4Addr) -> ServerRecord {
+        ServerRecord {
+            address,
+            port: self.port,
+            users_online: self.users_online,
+            reserved: self.reserved,
+            name: self.name,
+            description: self.description,
+        }
     }
 }
 
