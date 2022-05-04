@@ -1,5 +1,5 @@
 use tokio::net::UdpSocket;
-use std::net::SocketAddr;
+use std::net::{SocketAddr, Ipv4Addr};
 
 use hotline_tracker::RegistrationRecord;
 
@@ -20,11 +20,15 @@ impl RegistrationListener {
         })
     }
 
-    pub async fn next_registration(&mut self) -> Result<(SocketAddr, RegistrationRecord), Box<dyn std::error::Error>> {
+    pub async fn next_registration(&mut self) -> Result<(Ipv4Addr, RegistrationRecord), Box<dyn std::error::Error>> {
         let (len, addr) = self.socket.recv_from(&mut self.buf).await?;
 
         let r = RegistrationRecord::from_bytes(&self.buf[..len]).unwrap();
 
-        Ok((addr, r))
+        if let SocketAddr::V4(addr) = addr {
+            Ok((*addr.ip(), r))
+        } else {
+            panic!("no support for ipv6")
+        }
     }
 }
