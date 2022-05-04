@@ -261,7 +261,7 @@ pub fn string_to_macroman(s: &str) -> Vec<u8> {
 
 // this approach was lifted from arrayvec::ArrayString
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct MacRomanString<const CAP: usize> {
     inner: [u8; CAP],
     len: u8,
