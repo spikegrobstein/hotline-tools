@@ -1,9 +1,14 @@
+use tokio::net::UdpSocket;
+
 use futures::StreamExt;
 
 mod client;
 
 use client::Client;
 use client::TrackerPacket;
+
+use hotline_tracker::RegistrationRecord;
+use macroman_tools::MacRomanString;
 
 use clap::Parser;
 
@@ -30,8 +35,13 @@ struct RegisterArgs {
     #[clap(short, long, default_value="5500")]
     port: u16,
 
+    /// [Required] Number of users currently connected to this server.
     #[clap(short, long, default_value="0")]
     user_count: u16,
+
+    /// [Required] The unique ID for this server
+    #[clap(short, long)]
+    id: u32,
 }
 
 #[derive(Parser, Debug)]
@@ -57,8 +67,8 @@ async fn main() {
         Subcommand::List(list_args) => {
             list_tracker(&list_args).await
         },
-        Subcommand::Register(_register_args) => {
-            unimplemented!("not yet implemented.");
+        Subcommand::Register(register_args) => {
+            register(&register_args).await
         },
     };
 
@@ -95,6 +105,31 @@ async fn list_tracker(args: &ListArgs) -> Result<(), Box<dyn std::error::Error>>
             }
         }
     }
+
+    Ok(())
+}
+
+async fn register(args: &RegisterArgs) -> Result<(), Box<dyn std::error::Error>> {
+    let name = MacRomanString::from(args.name.as_str());
+    let description = MacRomanString::from(args.description.as_str());
+
+    // create the registration record so we have something to send.
+    let r = RegistrationRecord {
+        port: args.port,
+        users_online: args.user_count,
+        id: args.id,
+        name,
+        description,
+        ..RegistrationRecord::default()
+    };
+
+    // fling out a UDP packet to the tracker server.
+    let socket = UdpSocket::bind("0.0.0.0:2000").await?;
+    eprintln!("Socket opened...");
+    let buf = r.to_bytes();
+    eprintln!("Sending packet to {}", args.tracker);
+    let addr = format!("{}:5499", &args.tracker);
+    socket.send_to(&buf, &addr).await?;
 
     Ok(())
 }
