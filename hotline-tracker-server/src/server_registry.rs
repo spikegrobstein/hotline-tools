@@ -84,6 +84,7 @@ impl ServerRegistry {
 
         let total_servers = self.servers.len() as u16;
 
+        // TODO: don't hard-code this version number
         UpdateRecord {
             version: 1,
             users_online,

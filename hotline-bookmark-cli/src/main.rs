@@ -56,39 +56,34 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    match args.subcommand {
+    let result = match args.subcommand {
         Subcommand::Print(print_args) => {
-            match Bookmark::from_file(&print_args.file) {
-                Ok(bookmark) => {
-                    print_bookmark(&bookmark, print_args);
-                },
-                Err(err) => {
-                    eprintln!("Error: {}", err);
-                    process::exit(1);
-                }
-            }
+            print_bookmark(print_args)
         },
         Subcommand::Create(create_args) => {
-            match create_bookmark(create_args) {
-                Err(err) => {
-                    eprintln!("Error: {}", err);
-                    process::exit(1);
-                },
-                _ => {},
-            }
+            create_bookmark(create_args)
         },
+    };
+
+    if let Err(err) = result {
+        eprintln!("Error: {}", err);
+        process::exit(1);
     }
 }
 
-fn print_bookmark(bookmark: &Bookmark, args: PrintArgs) {
+fn print_bookmark(args: PrintArgs) -> Result<(), Box<dyn std::error::Error>> {
+    let bookmark = Bookmark::from_file(&args.file)?;
+
     if args.json {
-        let json = serde_json::to_string(&bookmark).unwrap();
+        let json = serde_json::to_string(&bookmark)?;
         println!("{}", json);
     } else {
         println!("Address: {}", bookmark.address);
         println!("Username: {}", bookmark.username);
         println!("Password: {}", bookmark.password);
     }
+
+    Ok(())
 }
 
 fn create_bookmark(args: CreateArgs) -> Result<(), Box<dyn std::error::Error>> {

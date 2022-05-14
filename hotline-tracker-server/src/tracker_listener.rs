@@ -43,6 +43,8 @@ impl TrackerListener {
                     framed_stream.send(TrackerPacket::Header).await.unwrap();
                     framed_stream.send(TrackerPacket::Update(update)).await.unwrap();
 
+                    // TODO: this is probably fine for the scale we're at today, but this should
+                    // emit updates in chunks.
                     for s in servers {
                         eprintln!("sending server record");
                         framed_stream.send(TrackerPacket::Server(s)).await.unwrap();
