@@ -218,10 +218,12 @@ name = "hotline-tracker-client"
 version = "0.1.0"
 dependencies = [
  "bytes",
+ "clap",
  "futures",
  "futures-sink",
  "hotline-tracker",
  "macroman-tools",
+ "serde_json",
  "tokio",
  "tokio-stream",
  "tokio-util",

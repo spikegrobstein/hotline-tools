@@ -5,13 +5,69 @@ mod client;
 use client::Client;
 use client::TrackerPacket;
 
-// usage
-// hltracker list <server>
-// --json for json output
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+struct ListArgs {
+    /// The tracker to list servers from
+    tracker: String,
+}
+
+#[derive(Parser, Debug)]
+struct RegisterArgs {
+    /// The tracker to register to
+    tracker: String,
+
+    /// The name of your server; how it will appear in the tracker
+    #[clap(short, long)]
+    name: String,
+
+    /// How your server will be described in the listing
+    #[clap(short, long)]
+    description: String,
+
+    /// The port for your Hotline server
+    #[clap(short, long, default_value="5500")]
+    port: u16,
+
+    #[clap(short, long, default_value="0")]
+    user_count: u16,
+}
+
+#[derive(Parser, Debug)]
+enum Subcommand {
+    List(ListArgs),
+    Register(RegisterArgs),
+}
+
+#[derive(Parser, Debug)]
+struct Args {
+    #[clap(subcommand)]
+    subcommand: Subcommand,
+}
 
 #[tokio::main]
 async fn main() {
-    let mut client = Client::connect("hltracker.com", 5498).await.unwrap();
+    let args = Args::parse();
+
+    let result = match args.subcommand {
+        Subcommand::List(list_args) => {
+            list_tracker(&list_args).await
+        },
+        Subcommand::Register(_register_args) => {
+            unimplemented!("not yet implemented.");
+        },
+    };
+
+    if let Err(err) = result {
+        eprintln!("Error: {:?}", err);
+        std::process::exit(1);
+    }
+}
+
+async fn list_tracker(args: &ListArgs) -> Result<(), Box<dyn std::error::Error>> {
+    // FIXME: this currently only works with default port
+    let mut client = Client::connect(&args.tracker, 5498).await?;
 
     while let Some(packet) = client.framed_stream.next().await {
         match packet {
@@ -37,6 +93,5 @@ async fn main() {
         }
     }
 
-    eprintln!("done.");
-    std::process::exit(0);
+    Ok(())
 }
