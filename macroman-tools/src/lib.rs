@@ -325,7 +325,7 @@ impl<const CAP: usize> MacRomanString<CAP> {
 
         let len = s.len();
 
-        self.inner[..len].clone_from_slice(&s);
+        self.inner[..len].clone_from_slice(s);
         self.len = len as u8;
 
         Ok(())
