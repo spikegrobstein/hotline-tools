@@ -18,11 +18,11 @@ struct RegisterArgs {
     /// The tracker to register to
     tracker: String,
 
-    /// The name of your server; how it will appear in the tracker
+    /// [Required] The name of your server; how it will appear in the tracker
     #[clap(short, long)]
     name: String,
 
-    /// How your server will be described in the listing
+    /// [Required] How your server will be described in the listing
     #[clap(short, long)]
     description: String,
 
@@ -36,7 +36,10 @@ struct RegisterArgs {
 
 #[derive(Parser, Debug)]
 enum Subcommand {
+    /// List servers on a given tracker
     List(ListArgs),
+
+    /// Manually register your server to a tracker
     Register(RegisterArgs),
 }
 

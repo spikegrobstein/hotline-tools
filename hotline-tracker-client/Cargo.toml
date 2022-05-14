@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 bytes = "1.1.0"
-clap = { version = "3.1.18", features = ["derive", "cargo"] }
+clap = { version = "3.1.18", features = ["derive", "cargo", "wrap_help"] }
 futures = "0.3.21"
 futures-sink = "0.3.21"
 hotline-tracker = { path = "../hotline-tracker" }
