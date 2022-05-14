@@ -116,4 +116,8 @@ impl ServerRecord {
 
         self.data_size()
     }
+
+    pub fn address_with_port(&self) -> String {
+        format!("{}:{}", self.address, self.port)
+    }
 }
