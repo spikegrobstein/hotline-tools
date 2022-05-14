@@ -107,6 +107,7 @@ impl Decoder for HLTrackerCodec {
                 .map(TrackerPacket::Update);
             // dbg!(&update_record);
             if let Some(TrackerPacket::Update(ref update)) = update_record {
+                src.advance(update.data_size());
                 self.expected_total_servers = Some(update.total_servers);
             }
 
@@ -116,7 +117,8 @@ impl Decoder for HLTrackerCodec {
             let server_record = ServerRecord::from_bytes(src)
                 .map(TrackerPacket::Server);
 
-            if server_record.is_some() {
+            if let Some(TrackerPacket::Server(ref server_record)) = server_record {
+                src.advance(server_record.data_size());
                 self.received_server_count += 1;
             }
 

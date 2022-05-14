@@ -3,7 +3,7 @@ use macroman_tools::MacRomanString;
 
 use std::net::Ipv4Addr;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ServerRecord {
     pub address: Ipv4Addr,
     pub port: u16,
@@ -27,7 +27,7 @@ impl Default for ServerRecord {
 }
 
 impl ServerRecord {
-    pub fn from_bytes(bytes: &mut BytesMut) -> Option<Self> {
+    pub fn from_bytes(mut bytes: &[u8]) -> Option<Self> {
         // first, let's make sure we have enough bytes in the buffer
         // to do this, we have to make sure we can read the name_len field
         // then that we have enough bytes to read that + desc_len + desc
@@ -44,7 +44,7 @@ impl ServerRecord {
         if bytes.remaining() < 12 + ex_name_len + ex_desc_len {
             // we know exactly how much we need for this next frame
             // so let's just reserve it.
-            bytes.reserve(12 + ex_name_len + ex_desc_len);
+            // bytes.reserve(12 + ex_name_len + ex_desc_len);
 
             return None;
         }
@@ -76,19 +76,31 @@ impl ServerRecord {
         // dbg!(description);
         bytes.advance(desc_len as usize);
 
-        Some(Self {
+        let server_record = Self {
             address,
             port,
             users_online,
             reserved,
             name,
             description,
-        })
+        };
+
+        Some(server_record)
     }
 
-    pub fn to_bytes(&self) -> BytesMut {
-        let mut buf = BytesMut::with_capacity(12 + self.name.len() + self.description.len());
+    pub fn data_size(&self) -> usize {
+        12 + self.name.len() + self.description.len()
+    }
 
+    pub fn as_bytes(&self) -> BytesMut {
+        let mut buf = BytesMut::with_capacity(self.data_size());
+
+        self.put_slice(&mut buf);
+
+        buf
+    }
+
+    pub fn put_slice(&self, buf: &mut BytesMut) -> usize {
         let octets = self.address.octets();
         buf.put_u8(octets[0]);
         buf.put_u8(octets[1]);
@@ -99,9 +111,9 @@ impl ServerRecord {
         buf.put_u16(self.users_online);
         buf.put_u16(self.reserved);
 
-        self.name.write_to_buf(&mut buf);
-        self.description.write_to_buf(&mut buf);
+        self.name.write_to_buf(buf);
+        self.description.write_to_buf(buf);
 
-        buf
+        self.data_size()
     }
 }
