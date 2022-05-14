@@ -125,9 +125,7 @@ async fn register(args: &RegisterArgs) -> Result<(), Box<dyn std::error::Error>>
 
     // fling out a UDP packet to the tracker server.
     let socket = UdpSocket::bind("0.0.0.0:2000").await?;
-    eprintln!("Socket opened...");
     let buf = r.to_bytes();
-    eprintln!("Sending packet to {}", args.tracker);
     let addr = format!("{}:5499", &args.tracker);
     socket.send_to(&buf, &addr).await?;
 
