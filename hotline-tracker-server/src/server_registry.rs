@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::net::Ipv4Addr;
 use std::default::Default;
 
-use tokio::time::Instant;
+use tokio::time::{Instant, Duration};
 
 use hotline_tracker::{
     ServerRecord,
@@ -31,12 +31,14 @@ impl ServerEntry {
 /// and some other data about them.
 #[derive(Debug)]
 pub struct ServerRegistry {
+    server_expiry: Duration,
     servers: HashMap<u32, ServerEntry>,
 }
 
 impl Default for ServerRegistry {
     fn default() -> Self {
         Self {
+            server_expiry: Duration::from_secs(300), // 5 minutes
             servers: HashMap::new(),
         }
     }
@@ -47,6 +49,24 @@ impl ServerRegistry {
         Self::default()
     }
 
+    pub fn expire(&mut self) {
+        self.servers.retain(|&k, v| {
+            let expires_at = v.datestamp + self.server_expiry;
+
+            eprintln!("server record expires_at: {:?}", expires_at);
+
+            // duration == 0 //-> not expired
+            let is_expired = Instant::now().duration_since(expires_at) != Duration::ZERO;
+
+            if is_expired {
+                eprintln!("server {k} expired.");
+            }
+
+            // return true to keep
+            !is_expired
+        });
+    }
+
     pub fn register(&mut self, address: Ipv4Addr, registration_record: RegistrationRecord) {
         let id = registration_record.id;
         let server = registration_record.to_server_record(address);
@@ -54,7 +74,9 @@ impl ServerRegistry {
         self.servers.insert(id, ServerEntry::new(server));
     }
 
-    pub fn create_update_record(&self) -> UpdateRecord {
+    pub fn create_update_record(&mut self) -> UpdateRecord {
+        self.expire();
+
         let users_online = self.servers
             .iter()
             .map(|(_, entry)| entry.server.users_online)
@@ -68,5 +90,12 @@ impl ServerRegistry {
             total_servers,
             unknown: total_servers,
         }
+    }
+
+    pub fn server_records(&mut self) -> Vec<ServerRecord> {
+        self.servers.iter().map(|(_k, v)| {
+            v.server.clone()
+        })
+        .collect()
     }
 }
