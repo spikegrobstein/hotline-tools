@@ -4,6 +4,8 @@ use macroman_tools::macroman_to_string;
 use std::io::prelude::*;
 use std::fs::File;
 
+use serde::{Serialize, Deserialize};
+
 const BOOKMARK_MAGIC_WORD: &[u8; 4] = b"HTsc";
 const BOOKMARK_VERSION: u16 = 1;
 const BOOKMARK_HEADER_LEN: usize = 6;
@@ -17,7 +19,7 @@ const PASSWORD_OFFSET: usize = 169;
 const ADDRESS_OFFSET: usize = 203;
 
 /// a version 1 hotline bookmark
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Bookmark {
     /// the address for the bookmark. hostname or IP. may include port
     pub address: String,

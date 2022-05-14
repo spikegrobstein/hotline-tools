@@ -82,7 +82,8 @@ fn main() {
 
 fn print_bookmark(bookmark: &Bookmark, args: PrintArgs) {
     if args.json {
-        unimplemented!("no json yet");
+        let json = serde_json::to_string(&bookmark).unwrap();
+        println!("{}", json);
     } else {
         println!("Address: {}", bookmark.address);
         println!("Username: {}", bookmark.username);
