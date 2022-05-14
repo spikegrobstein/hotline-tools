@@ -20,7 +20,7 @@ pub struct Client {
 
 impl Client {
     pub async fn connect(address: &str, port: u16) -> Result<Self, Box<dyn std::error::Error>> {
-        eprintln!("connecting... to {address}:{port}");
+        // eprintln!("connecting... to {address}:{port}");
 
         let address = format!("{address}:{port}");
         let mut stream = TcpStream::connect(address).await?;
@@ -33,7 +33,7 @@ impl Client {
         let codec = HLTrackerCodec::new();
         let framed_stream = Framed::new(stream, codec);
 
-        eprintln!("initialized.");
+        // eprintln!("initialized.");
 
         Ok(Self {
             framed_stream,

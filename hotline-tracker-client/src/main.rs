@@ -7,10 +7,12 @@ mod client;
 use client::Client;
 use client::TrackerPacket;
 
-use hotline_tracker::RegistrationRecord;
+use hotline_tracker::{UpdateRecord, RegistrationRecord};
 use macroman_tools::MacRomanString;
 
 use clap::Parser;
+
+use termion::color;
 
 #[derive(Parser, Debug)]
 struct ListArgs {
@@ -82,31 +84,63 @@ async fn list_tracker(args: &ListArgs) -> Result<(), Box<dyn std::error::Error>>
     // FIXME: this currently only works with default port
     let mut client = Client::connect(&args.tracker, 5498).await?;
 
+    let mut last_update: Option<UpdateRecord> = None;
+    let mut servers = vec![];
+
     while let Some(packet) = client.framed_stream.next().await {
         match packet {
             Ok(TrackerPacket::Update(update)) => {
-                println!("got update:");
-                println!("  users_online:  {}", update.users_online);
-                println!("  total_servers: {}", update.total_servers);
+                last_update = Some(update);
+                // println!("got update:");
+                // println!("  users_online:  {}", update.users_online);
+                // println!("  total_servers: {}", update.total_servers);
             },
             Ok(TrackerPacket::Server(server)) => {
-                println!("{} [{}:{}]", server.name, server.address, server.port);
-                println!("  {}", server.description);
+                servers.push(server);
+                // println!("{} [{}:{}]", server.name, server.address, server.port);
+                // println!("  {}", server.description);
             },
             Ok(TrackerPacket::ResponseHeader) => {
-                println!("connected!");
+                // eprintln!("connected!");
             },
             Ok(TrackerPacket::Complete) => {
                 break;
             },
             Err(err) => {
                 panic!("got something else: {err}");
-                
             }
         }
     }
 
+    // ServerName                  [24.6.34.123:5500] (6 Users)
+    //   The best server ever in the history of Hotline
+    // Another crazy server      [142.33.94.120:5500] (0 Users)
+    //   Just another server tha tno one really cares about,
+    //   someone is bound to come check it out at some point.
+
+    // now that this completed, let's print out all of the servers we got
+    for s in servers {
+        println!("{} [{}] ({} Users)", 
+            bold(&s.name.as_string()),
+            s.address_with_port(),
+            s.users_online,
+        );
+    }
+
+    if let Some(last_update) = last_update {
+        // print the final update
+        println!("");
+        println!("{} Total servers. {} Users online.",
+            last_update.total_servers,
+            last_update.users_online
+        );
+    }
+
     Ok(())
+}
+
+fn bold(s: &str) -> String {
+    format!("{}{}{}", termion::style::Bold, s, termion::style::Reset)
 }
 
 async fn register(args: &RegisterArgs) -> Result<(), Box<dyn std::error::Error>> {
