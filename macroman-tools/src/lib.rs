@@ -1,4 +1,4 @@
-use bytes::{Bytes, BufMut};
+use bytes::{Bytes, BufMut, BytesMut};
 
 use std::convert::From;
 use std::fmt;
@@ -339,7 +339,7 @@ impl<const CAP: usize> MacRomanString<CAP> {
         &self.inner[..(self.len as usize)]
     }
 
-    pub fn write_to_buf<T: BufMut>(&self, mut buf: T) {
+    pub fn write_to_buf(&self, buf: &mut BytesMut) {
         buf.put_u8(self.len);
         buf.put_slice(self.as_bytes());
     }
