@@ -88,7 +88,7 @@ impl ServerRegistry {
             version: 1,
             users_online,
             total_servers,
-            unknown: total_servers,
+            remaining_servers: total_servers,
         }
     }
 
