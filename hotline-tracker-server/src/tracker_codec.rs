@@ -1,9 +1,7 @@
 use tokio_util::codec::{Decoder, Encoder};
-use hotline_tracker::{UpdateRecord, ServerRecord};
+use hotline_tracker::{Header, UpdateRecord, ServerRecord};
 
 use bytes::{BytesMut, Buf, BufMut};
-
-const HEADER: &[u8; 6] = b"HTRK\x00\x01";
 
 #[derive(Debug, PartialEq)]
 enum State {
@@ -38,12 +36,13 @@ impl Decoder for TrackerCodec {
 
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
         if self.state == State::Initialized {
-            let resp_header = &src[..6];
-            if resp_header == HEADER {
-                // got header
-                self.state = State::ReceivedHeader;
-                src.advance(6);
-                return Ok(Some(TrackerPacket::Header))
+            if let Some(header) = Header::from_bytes(&src) {
+                if header.is_valid() {
+                    self.state = State::ReceivedHeader;
+                    return Ok(Some(TrackerPacket::Header))
+                }
+
+                panic!("bad header: {} / {}", header.magic_word, header.version);
             }
 
             panic!("failed to get header");
@@ -59,7 +58,8 @@ impl Encoder<TrackerPacket> for TrackerCodec {
     fn encode(&mut self, pkt: TrackerPacket, dst: &mut BytesMut) -> Result<(), Self::Error> {
         match pkt {
             TrackerPacket::Header => {
-                dst.put_slice(HEADER);
+                let header = Header::default();
+                header.put_slice(dst);
             },
             TrackerPacket::Update(update) => {
                 update.put_slice(dst);

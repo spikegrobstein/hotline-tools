@@ -5,8 +5,7 @@ use tokio::net::TcpStream;
 // use tokio_stream::StreamExt;
 use tokio::io::AsyncWriteExt;
 
-use hotline_tracker::UpdateRecord;
-use hotline_tracker::ServerRecord;
+use hotline_tracker::{Header, UpdateRecord, ServerRecord};
 
 // establish connection
 // send HELO packet
@@ -26,8 +25,7 @@ impl Client {
         let mut stream = TcpStream::connect(address).await?;
 
         let mut buf = BytesMut::with_capacity(6);
-        buf.put(&b"HTRK"[..]);
-        buf.put_u16(1);
+        Header::default().put_slice(&mut buf);
         stream.write_all(&buf).await?;
 
         let codec = HLTrackerCodec::new();
