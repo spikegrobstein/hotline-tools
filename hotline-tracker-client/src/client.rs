@@ -1,4 +1,4 @@
-use bytes::{BytesMut, BufMut, Buf};
+use bytes::{BytesMut, Buf};
 use tokio_util::codec::Decoder;
 use tokio_util::codec::Framed;
 use tokio::net::TcpStream;
@@ -43,7 +43,7 @@ impl Client {
 pub enum TrackerPacket {
     ResponseHeader,
     Update(UpdateRecord),
-    Server(ServerRecord),
+    Server(Box<ServerRecord>),
     Complete,
 }
 
@@ -113,7 +113,7 @@ impl Decoder for HLTrackerCodec {
         } else {
             // server record
             let server_record = ServerRecord::from_bytes(src)
-                .map(TrackerPacket::Server);
+                .map(|s| TrackerPacket::Server(s.into()));
 
             if let Some(TrackerPacket::Server(ref server_record)) = server_record {
                 src.advance(server_record.data_size());

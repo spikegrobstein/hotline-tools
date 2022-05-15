@@ -12,7 +12,7 @@ use macroman_tools::MacRomanString;
 
 use clap::Parser;
 
-use termion::color;
+use termion::style;
 
 #[derive(Parser, Debug)]
 struct ListArgs {
@@ -129,7 +129,7 @@ async fn list_tracker(args: &ListArgs) -> Result<(), Box<dyn std::error::Error>>
 
     if let Some(last_update) = last_update {
         // print the final update
-        println!("");
+        println!();
         println!("{} Total servers. {} Users online.",
             last_update.total_servers,
             last_update.users_online
@@ -140,7 +140,7 @@ async fn list_tracker(args: &ListArgs) -> Result<(), Box<dyn std::error::Error>>
 }
 
 fn bold(s: &str) -> String {
-    format!("{}{}{}", termion::style::Bold, s, termion::style::Reset)
+    format!("{}{}{}", style::Bold, s, style::Reset)
 }
 
 async fn register(args: &RegisterArgs) -> Result<(), Box<dyn std::error::Error>> {
