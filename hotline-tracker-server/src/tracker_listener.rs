@@ -2,7 +2,8 @@ use tokio::net::TcpListener;
 use std::sync::{Mutex, Arc};
 
 use crate::server_registry::ServerRegistry;
-use crate::tracker_codec::{TrackerCodec, TrackerPacket};
+use crate::tracker_codec::TrackerCodec;
+use hotline_tracker::TrackerPacket;
 
 use tokio_util::codec::Framed;
 use futures::{StreamExt, SinkExt};
@@ -47,7 +48,7 @@ impl TrackerListener {
                     // emit updates in chunks.
                     for s in servers {
                         eprintln!("sending server record");
-                        framed_stream.send(TrackerPacket::Server(s)).await.unwrap();
+                        framed_stream.send(TrackerPacket::Server(s.into())).await.unwrap();
                     }
                 }
             });

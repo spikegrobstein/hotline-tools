@@ -1,25 +1,16 @@
 use tokio_util::codec::{Decoder, Encoder};
-use hotline_tracker::{Header, UpdateRecord, ServerRecord};
+use hotline_tracker::{TrackerPacket, Header, UpdateRecord, ServerRecord};
 
-use bytes::{BytesMut, Buf, BufMut};
+use bytes::BytesMut;
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 enum State {
     Initialized,
     ReceivedHeader,
-    SentUpdate,
-    Done,
-}
-
-pub enum TrackerPacket {
-    Header,
-    Update(UpdateRecord),
-    Server(ServerRecord),
 }
 
 pub struct TrackerCodec {
     state: State,
-
 }
 
 impl TrackerCodec {
@@ -42,7 +33,7 @@ impl Decoder for TrackerCodec {
                     return Ok(Some(TrackerPacket::Header))
                 }
 
-                panic!("bad header: {} / {}", header.magic_word, header.version);
+                panic!("bad header: {:?} / {}", header.magic_word, header.version);
             }
 
             panic!("failed to get header");
@@ -67,6 +58,7 @@ impl Encoder<TrackerPacket> for TrackerCodec {
             TrackerPacket::Server(server) => {
                 server.put_slice(dst);
             },
+            TrackerPacket::Complete => {}, // no-op
         }
 
         Ok(())

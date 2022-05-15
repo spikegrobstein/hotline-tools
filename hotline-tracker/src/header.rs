@@ -1,14 +1,14 @@
 use bytes::{Buf, BytesMut, BufMut};
 
-const MAGIC_WORD_LEN: usize = 4;
-const MAGIC_WORD: &[u8; MAGIC_WORD_LEN] = b"HTRK";
-const VERSION: u16 = 1;
-const HEADER_LEN: usize = 6;
+pub const MAGIC_WORD_LEN: usize = 4;
+pub const MAGIC_WORD: &[u8; MAGIC_WORD_LEN] = b"HTRK";
+pub const VERSION: u16 = 1;
+pub const HEADER_LEN: usize = 6;
 
 #[derive(Debug)]
 pub struct Header {
-    magic_word: [u8; MAGIC_WORD_LEN],
-    version: u16,
+    pub magic_word: [u8; MAGIC_WORD_LEN],
+    pub version: u16,
 }
 
 impl Default for Header {

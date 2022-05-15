@@ -5,9 +5,8 @@ use futures::StreamExt;
 mod client;
 
 use client::Client;
-use client::TrackerPacket;
 
-use hotline_tracker::{UpdateRecord, RegistrationRecord};
+use hotline_tracker::{TrackerPacket, UpdateRecord, RegistrationRecord};
 use macroman_tools::MacRomanString;
 
 use clap::Parser;
@@ -100,7 +99,7 @@ async fn list_tracker(args: &ListArgs) -> Result<(), Box<dyn std::error::Error>>
                 // println!("{} [{}:{}]", server.name, server.address, server.port);
                 // println!("  {}", server.description);
             },
-            Ok(TrackerPacket::ResponseHeader) => {
+            Ok(TrackerPacket::Header) => {
                 // eprintln!("connected!");
             },
             Ok(TrackerPacket::Complete) => {

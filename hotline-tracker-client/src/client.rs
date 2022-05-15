@@ -5,7 +5,8 @@ use tokio::net::TcpStream;
 // use tokio_stream::StreamExt;
 use tokio::io::AsyncWriteExt;
 
-use hotline_tracker::{Header, UpdateRecord, ServerRecord};
+use hotline_tracker::{TrackerPacket, Header, UpdateRecord, ServerRecord};
+use hotline_tracker::header;
 
 // establish connection
 // send HELO packet
@@ -39,14 +40,6 @@ impl Client {
     }
 }
 
-#[derive(Debug)]
-pub enum TrackerPacket {
-    ResponseHeader,
-    Update(UpdateRecord),
-    Server(Box<ServerRecord>),
-    Complete,
-}
-
 #[derive(PartialEq, Eq)]
 pub enum State {
     Initialized,
@@ -75,11 +68,14 @@ impl Decoder for HLTrackerCodec {
 
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
         if self.state == State::Initialized {
-            let resp_header = &src[..6];
-            if resp_header == b"HTRK\x00\x01" {
-                self.state = State::ReceivedHeader;
-                src.advance(6);
-                return Ok(Some(TrackerPacket::ResponseHeader));
+            if let Some(header) = Header::from_bytes(src) {
+                if header.is_valid() {
+                    src.advance(header::HEADER_LEN);
+                    self.state = State::ReceivedHeader;
+                    return Ok(Some(TrackerPacket::Header));
+                } else {
+                    panic!("invalid header {:?} / {}", header.magic_word, header.version);
+                }
             }
 
             panic!("failed to get header.");
