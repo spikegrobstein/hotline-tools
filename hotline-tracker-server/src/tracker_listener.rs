@@ -1,3 +1,4 @@
+use std::net::{IpAddr, SocketAddr};
 use tokio::net::TcpListener;
 use std::sync::{Mutex, Arc};
 
@@ -8,15 +9,18 @@ use hotline_tracker::TrackerPacket;
 use tokio_util::codec::Framed;
 use futures::{StreamExt, SinkExt};
 
-pub const TRACKER_LISTEN_PORT: u16 = 5498;
 
 pub struct TrackerListener {
     registry: Arc<Mutex<ServerRegistry>>,
 }
 
 impl TrackerListener {
-    pub async fn listen(addr: &str, registry: Arc<Mutex<ServerRegistry>>) -> Result<(), Box<dyn std::error::Error>> {
-        let socket = TcpListener::bind(addr).await?;
+    pub const TRACKER_LISTEN_PORT: u16 = 5498;
+
+    pub async fn listen(addr: &str, port: u16, registry: Arc<Mutex<ServerRegistry>>) -> Result<(), Box<dyn std::error::Error>> {
+        let interface = addr.parse::<IpAddr>()?;
+        let sockaddr = SocketAddr::new(interface, port);
+        let socket = TcpListener::bind(sockaddr).await?;
 
         loop {
             let (socket, addr) = socket.accept().await?;

@@ -1,9 +1,7 @@
 use tokio::net::UdpSocket;
-use std::net::{SocketAddr, Ipv4Addr};
+use std::net::{SocketAddr, IpAddr, Ipv4Addr};
 
 use hotline_tracker::RegistrationRecord;
-
-pub const REGISTRATION_LISTEN_PORT: u16 = 5499;
 
 pub struct RegistrationListener {
     socket: UdpSocket,
@@ -11,8 +9,13 @@ pub struct RegistrationListener {
 }
 
 impl RegistrationListener {
-    pub async fn listen(addr: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let socket = UdpSocket::bind(addr).await?;
+    pub const REGISTRATION_LISTEN_PORT: u16 = 5499;
+
+    pub async fn listen(addr: &str, port: u16) -> Result<Self, Box<dyn std::error::Error>> {
+        let interface = addr.parse::<IpAddr>()?;
+        let sockaddr = SocketAddr::new(interface, port);
+
+        let socket = UdpSocket::bind(sockaddr).await?;
 
         Ok(Self {
             socket,
