@@ -129,9 +129,8 @@ async fn list_tracker(args: &ListArgs) -> Result<(), Box<dyn std::error::Error>>
     if let Some(last_update) = last_update {
         // print the final update
         println!();
-        println!("{} Total servers. {} Users online.",
-            last_update.total_servers,
-            last_update.users_online
+        println!("{} Total servers.",
+            last_update.total_servers
         );
     }
 

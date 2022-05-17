@@ -77,9 +77,9 @@ impl ServerRegistry {
     pub fn create_update_record(&mut self) -> UpdateRecord {
         self.expire();
 
-        let users_online = self.servers
+        let remaining_data_size: u16 = self.servers
             .iter()
-            .map(|(_, entry)| entry.server.users_online)
+            .map(|(_, entry)| entry.server.data_size() as u16)
             .sum();
 
         let total_servers = self.servers.len() as u16;
@@ -87,7 +87,7 @@ impl ServerRegistry {
         // TODO: don't hard-code this version number
         UpdateRecord {
             version: 1,
-            users_online,
+            remaining_data_size,
             total_servers,
             remaining_servers: total_servers,
         }
