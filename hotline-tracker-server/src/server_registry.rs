@@ -87,7 +87,7 @@ impl ServerRegistry {
         // TODO: don't hard-code this version number
         UpdateRecord {
             version: 1,
-            remaining_data_size,
+            remaining_data_size: remaining_data_size + 4,
             total_servers,
             remaining_servers: total_servers,
         }
