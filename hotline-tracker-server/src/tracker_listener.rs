@@ -11,21 +11,29 @@ use futures::{StreamExt, SinkExt};
 
 
 pub struct TrackerListener {
+    socket: TcpListener,
     registry: Arc<Mutex<ServerRegistry>>,
 }
 
 impl TrackerListener {
     pub const TRACKER_LISTEN_PORT: u16 = 5498;
 
-    pub async fn listen(addr: &str, port: u16, registry: Arc<Mutex<ServerRegistry>>) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn new(addr: &str, port: u16, registry: Arc<Mutex<ServerRegistry>>) -> Result<Self, Box<dyn std::error::Error>> {
         let interface = addr.parse::<IpAddr>()?;
         let sockaddr = SocketAddr::new(interface, port);
         let socket = TcpListener::bind(sockaddr).await?;
 
-        loop {
-            let (socket, addr) = socket.accept().await?;
+        Ok(Self {
+            socket,
+            registry,
+        })
+    }
 
-            let registry = registry.clone();
+    pub async fn listen(&self) -> Result<(), Box<dyn std::error::Error>> {
+        loop {
+            let (socket, addr) = self.socket.accept().await?;
+
+            let registry = self.registry.clone();
 
             tokio::spawn(async move {
                 let codec = TrackerCodec::new();
@@ -57,7 +65,5 @@ impl TrackerListener {
                 }
             });
         }
-
-
     }
 }

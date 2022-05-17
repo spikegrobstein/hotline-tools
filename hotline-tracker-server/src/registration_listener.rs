@@ -1,4 +1,5 @@
 use tokio::net::UdpSocket;
+use tokio::sync::mpsc::Sender;
 use std::net::{SocketAddr, IpAddr, Ipv4Addr};
 
 use hotline_tracker::RegistrationRecord;
@@ -6,12 +7,13 @@ use hotline_tracker::RegistrationRecord;
 pub struct RegistrationListener {
     socket: UdpSocket,
     buf: [u8; 780],
+    sender: Sender<(Ipv4Addr, RegistrationRecord)>,
 }
 
 impl RegistrationListener {
     pub const REGISTRATION_LISTEN_PORT: u16 = 5499;
 
-    pub async fn listen(addr: &str, port: u16) -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn new(addr: &str, port: u16, sender: Sender<(Ipv4Addr, RegistrationRecord)>) -> Result<Self, Box<dyn std::error::Error>> {
         let interface = addr.parse::<IpAddr>()?;
         let sockaddr = SocketAddr::new(interface, port);
 
@@ -20,20 +22,23 @@ impl RegistrationListener {
         Ok(Self {
             socket,
             buf: [0; 780],
+            sender,
         })
     }
 
-    pub async fn next_registration(&mut self) -> Result<(Ipv4Addr, RegistrationRecord), Box<dyn std::error::Error>> {
-        let (len, addr) = self.socket.recv_from(&mut self.buf).await?;
+    pub async fn listen(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        loop {
+            let (len, addr) = self.socket.recv_from(&mut self.buf).await?;
 
-        // TODO: have this return an Err if None.
-        let r = RegistrationRecord::from_bytes(&self.buf[..len]).unwrap();
+            // TODO: have this return an Err if None.
+            let r = RegistrationRecord::from_bytes(&self.buf[..len]).unwrap();
 
-        if let SocketAddr::V4(addr) = addr {
-            Ok((*addr.ip(), r))
-        } else {
-            // TODO: this should return an Err
-            panic!("no support for ipv6")
+            if let SocketAddr::V4(addr) = addr {
+                self.sender.send((*addr.ip(), r)).await?;
+            } else {
+                // TODO: this should return an Err
+                panic!("no support for ipv6")
+            }
         }
     }
 }
