@@ -6,6 +6,7 @@ mod tracker_codec;
 use registration_listener::RegistrationListener;
 use server_registry::ServerRegistry;
 use tracker_listener::TrackerListener;
+use macroman_tools::MacRomanString;
 
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -24,6 +25,9 @@ use clap::Parser;
 struct StartOptions {
     #[clap(long, default_value="0.0.0.0")]
     bind_address: String,
+
+    #[clap(long)]
+    password: Option<String>,
 }
 
 #[derive(Parser, Debug)]
@@ -69,6 +73,15 @@ async fn start(opts: StartOptions) -> Result<(), Box<dyn std::error::Error>> {
     while let Some((addr, r)) = rx.recv().await {
         println!("got record: {}: {}", r.name, r.description);
         println!("  {}:{} [{}]", addr, r.port, r.id);
+
+        // validate credentials
+        if let Some(ref pw) = opts.password {
+            let pw = MacRomanString::from(pw.as_str());
+            if pw != r.password {
+                eprintln!("Rejected record from {} ({})", addr, r.name);
+                continue;
+            }
+        }
 
         if let Ok(mut registry) = registry.lock() {
             registry.register(addr, r);
