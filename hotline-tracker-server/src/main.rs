@@ -53,42 +53,41 @@ async fn main() {
 async fn start(opts: StartOptions) -> Result<(), Box<dyn std::error::Error>> {
     let (tx, mut rx) = mpsc::channel(32);
 
-    let mut listener = RegistrationListener::new(&opts.bind_address, RegistrationListener::REGISTRATION_LISTEN_PORT, tx).await?;
-
     let registry = Arc::new(Mutex::new(ServerRegistry::new()));
 
-    let tcp_registry = registry.clone();
+    let mut registration_listener = RegistrationListener::new(&opts.bind_address, RegistrationListener::REGISTRATION_LISTEN_PORT, tx).await?;
+    let tracker_server = TrackerListener::new(&opts.bind_address, TrackerListener::TRACKER_LISTEN_PORT, registry.clone()).await?;
 
-    let tracker_server = TrackerListener::new(&opts.bind_address, TrackerListener::TRACKER_LISTEN_PORT, tcp_registry).await?;
-
+    // listen for listing connections
     tokio::spawn(async move {
         tracker_server.listen().await.unwrap();
     });
 
+    // listen for registrations. these will come through on the rx, from above.
     tokio::spawn(async move {
         // start listening for registrations
-        listener.listen().await.unwrap();
+        registration_listener.listen().await.unwrap();
     });
 
+    // get each new registration as they come in and handle it
+    // if we require a password, then validate that the password is correct
+    // reject incorrect passwords
+    // otherwise add to the registry
     while let Some((addr, r)) = rx.recv().await {
-        println!("got record: {}: {}", r.name, r.description);
-        println!("  {}:{} [{}]", addr, r.port, r.id);
-
         // validate credentials
         if let Some(ref pw) = opts.password {
             let pw = MacRomanString::from(pw.as_str());
             if pw != r.password {
-                eprintln!("Rejected record from {} ({})", addr, r.name);
+                eprintln!("Rejected record from {}@{addr}:{}", r.name, r.port);
                 continue;
             }
         }
 
+        // add to registry
         if let Ok(mut registry) = registry.lock() {
+            println!("Accepted record: {}@{addr}:{}", r.name, r.port);
             registry.register(addr, r);
-            eprintln!("registered server.");
         }
-
-        eprintln!("{:?}", registry);
     }
 
     Ok(())
