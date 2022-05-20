@@ -235,6 +235,7 @@ name = "hotline-tracker-server"
 version = "0.1.0"
 dependencies = [
  "bytes",
+ "clap",
  "futures",
  "hotline-tracker",
  "macroman-tools",

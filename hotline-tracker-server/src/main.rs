@@ -12,24 +12,52 @@ use std::sync::Mutex;
 
 use tokio::sync::mpsc;
 
+use clap::Parser;
+
 // server registry listens on a channel
 // registration listener sends registratoins through channel
 // tracker server has the registry
 // emit event stream?
 // metrics?
 
+#[derive(Parser, Debug)]
+struct StartOptions {
+    #[clap(long, default_value="0.0.0.0")]
+    bind_address: String,
+}
+
+#[derive(Parser, Debug)]
+enum Subcommand {
+    Start(StartOptions),
+}
+
+#[derive(Parser, Debug)]
+struct App {
+    #[clap(subcommand)]
+    subcommand: Subcommand,
+}
+
 #[tokio::main]
 async fn main() {
+    let app = App::parse();
+
+    match app.subcommand {
+        Subcommand::Start(opts) => start(opts).await.unwrap(),
+    }
+}
+
+async fn start(opts: StartOptions) -> Result<(), Box<dyn std::error::Error>> {
     let (tx, mut rx) = mpsc::channel(32);
 
-    let mut listener = RegistrationListener::new("0.0.0.0", RegistrationListener::REGISTRATION_LISTEN_PORT, tx).await.unwrap();
+    let mut listener = RegistrationListener::new(&opts.bind_address, RegistrationListener::REGISTRATION_LISTEN_PORT, tx).await?;
 
     let registry = Arc::new(Mutex::new(ServerRegistry::new()));
 
     let tcp_registry = registry.clone();
 
+    let tracker_server = TrackerListener::new(&opts.bind_address, TrackerListener::TRACKER_LISTEN_PORT, tcp_registry).await?;
+
     tokio::spawn(async move {
-        let tracker_server = TrackerListener::new("0.0.0.0", TrackerListener::TRACKER_LISTEN_PORT, tcp_registry).await.unwrap();
         tracker_server.listen().await.unwrap();
     });
 
@@ -50,6 +78,5 @@ async fn main() {
         eprintln!("{:?}", registry);
     }
 
-    println!("meh.");
-
+    Ok(())
 }
