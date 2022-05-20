@@ -10,6 +10,10 @@ use macroman_tools::MacRomanString;
 
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::net::Ipv4Addr;
+
+use std::fs::File;
+use std::io::{self, BufRead};
 
 use tokio::sync::mpsc;
 
@@ -28,8 +32,12 @@ struct StartOptions {
     bind_address: String,
 
     /// A required password for servers to pass in order to register with this tracker.
+    /// Must be MacRoman compatible.
     #[clap(long)]
     password: Option<String>,
+
+    #[clap(long)]
+    banfile: Option<String>,
 }
 
 #[derive(Parser, Debug)]
@@ -51,6 +59,20 @@ async fn main() {
     match app.subcommand {
         Subcommand::Start(opts) => start(opts).await.unwrap(),
     }
+}
+
+async fn is_banned(file: &str, addr: &Ipv4Addr) -> Result<bool, Box<dyn std::error::Error>> {
+    let f = File::open(file)?;
+    let addr: String = addr.to_string();
+
+    for line in io::BufReader::new(f).lines() {
+        let line = line?;
+        if line == addr {
+            return Ok(true);
+        }
+    }
+
+    return Ok(false);
 }
 
 async fn start(opts: StartOptions) -> Result<(), Box<dyn std::error::Error>> {
@@ -82,8 +104,22 @@ async fn start(opts: StartOptions) -> Result<(), Box<dyn std::error::Error>> {
         // validate credentials
         if let Some(ref pw) = password {
             if pw != &r.password {
-                eprintln!("Rejected record: {} @ {addr}:{}", r.name, r.port);
+                eprintln!("Rejected record [bad credentials]: {} @ {addr}:{}", r.name, r.port);
                 continue;
+            }
+        }
+
+        // check if server is in ban list
+        if let Some(ref banfile) = opts.banfile {
+            match is_banned(&banfile, &addr).await {
+                Ok(true) => {
+                    eprintln!("Rejected record [banned]: {} @ {addr}:{}", r.name, r.port);
+                    continue;
+                },
+                Err(err) => {
+                    panic!("Failed to check entry: {err}");
+                },
+                _ => {},
             }
         }
 
