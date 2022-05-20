@@ -37,12 +37,15 @@ struct RegisterArgs {
     port: u16,
 
     /// [Required] Number of users currently connected to this server.
-    #[clap(short, long, default_value="0")]
+    #[clap(long, default_value="0")]
     user_count: u16,
 
     /// [Required] The unique ID for this server
-    #[clap(short, long)]
+    #[clap(long)]
     id: u32,
+
+    #[clap(long, default_value="")]
+    password: String,
 }
 
 #[derive(Parser, Debug)]
@@ -144,6 +147,7 @@ fn bold(s: &str) -> String {
 async fn register(args: &RegisterArgs) -> Result<(), Box<dyn std::error::Error>> {
     let name = MacRomanString::from(args.name.as_str());
     let description = MacRomanString::from(args.description.as_str());
+    let password = MacRomanString::from(args.password.as_str());
 
     // create the registration record so we have something to send.
     let r = RegistrationRecord {
@@ -152,6 +156,7 @@ async fn register(args: &RegisterArgs) -> Result<(), Box<dyn std::error::Error>>
         id: args.id,
         name,
         description,
+        password,
         ..RegistrationRecord::default()
     };
 
