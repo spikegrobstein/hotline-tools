@@ -69,23 +69,24 @@ async fn start(opts: StartOptions) -> Result<(), Box<dyn std::error::Error>> {
         registration_listener.listen().await.unwrap();
     });
 
+    let password: Option<MacRomanString<255>> = opts.password.map(|pw| MacRomanString::from(pw.as_str()));
+
     // get each new registration as they come in and handle it
     // if we require a password, then validate that the password is correct
     // reject incorrect passwords
     // otherwise add to the registry
     while let Some((addr, r)) = rx.recv().await {
         // validate credentials
-        if let Some(ref pw) = opts.password {
-            let pw = MacRomanString::from(pw.as_str());
-            if pw != r.password {
-                eprintln!("Rejected record from {}@{addr}:{}", r.name, r.port);
+        if let Some(ref pw) = password {
+            if pw != &r.password {
+                eprintln!("Rejected record: {} @ {addr}:{}", r.name, r.port);
                 continue;
             }
         }
 
         // add to registry
         if let Ok(mut registry) = registry.lock() {
-            println!("Accepted record: {}@{addr}:{}", r.name, r.port);
+            println!("Accepted record: {} @ {addr}:{}", r.name, r.port);
             registry.register(addr, r);
         }
     }
