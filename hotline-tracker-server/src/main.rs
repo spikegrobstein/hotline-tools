@@ -23,15 +23,18 @@ use clap::Parser;
 
 #[derive(Parser, Debug)]
 struct StartOptions {
+    /// The IP address to bind the server to and listen for requests and server registrations.
     #[clap(long, default_value="0.0.0.0")]
     bind_address: String,
 
+    /// A required password for servers to pass in order to register with this tracker.
     #[clap(long)]
     password: Option<String>,
 }
 
 #[derive(Parser, Debug)]
 enum Subcommand {
+    /// Start the tracker server
     Start(StartOptions),
 }
 
