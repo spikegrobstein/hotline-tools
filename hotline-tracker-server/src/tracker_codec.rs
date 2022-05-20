@@ -1,5 +1,5 @@
 use tokio_util::codec::{Decoder, Encoder};
-use hotline_tracker::{TrackerPacket, Header, UpdateRecord, ServerRecord};
+use hotline_tracker::{TrackerPacket, Header};
 
 use bytes::BytesMut;
 
@@ -27,7 +27,7 @@ impl Decoder for TrackerCodec {
 
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
         if self.state == State::Initialized {
-            if let Some(header) = Header::from_bytes(&src) {
+            if let Some(header) = Header::from_bytes(src) {
                 if header.is_valid() {
                     self.state = State::ReceivedHeader;
                     return Ok(Some(TrackerPacket::Header))

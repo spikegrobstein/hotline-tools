@@ -41,7 +41,7 @@ impl TrackerListener {
 
                 eprintln!("got a connection from {addr}");
 
-                if let Ok(_) = framed_stream.next().await.unwrap() {
+                if framed_stream.next().await.unwrap().is_ok() {
                     let (update, servers) = {
                         let mut registry = registry.lock().unwrap();
                         println!("got header.");
