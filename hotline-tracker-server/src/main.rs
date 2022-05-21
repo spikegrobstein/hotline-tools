@@ -1,3 +1,11 @@
+#[macro_use]
+extern crate diesel;
+
+use diesel::prelude::*;
+
+mod schema;
+mod banlist;
+
 mod registration_listener;
 mod server_registry;
 mod tracker_listener;
@@ -8,16 +16,19 @@ use server_registry::ServerRegistry;
 use tracker_listener::TrackerListener;
 use macroman_tools::MacRomanString;
 
+use banlist::Banlist;
+
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::net::Ipv4Addr;
-
-use std::fs::File;
-use std::io::{self, BufRead};
 
 use tokio::sync::mpsc;
 
 use clap::Parser;
+
+// config
+// banlist (array of addresses)
+// passwords (array of passwords)
+// require_password (boolean)
 
 // server registry listens on a channel
 // registration listener sends registratoins through channel
@@ -50,32 +61,29 @@ enum Subcommand {
 struct App {
     #[clap(subcommand)]
     subcommand: Subcommand,
+
+    /// Path to the sqlite3 database
+    #[clap(long, default_value="./tracker.sqlite3")]
+    database: String,
 }
 
 #[tokio::main]
 async fn main() {
     let app = App::parse();
 
+    let connection = open_db(&app.database);
+
     match app.subcommand {
-        Subcommand::Start(opts) => start(opts).await.unwrap(),
+        Subcommand::Start(opts) => start(connection, opts).await.unwrap(),
     }
 }
 
-async fn is_banned(file: &str, addr: &Ipv4Addr) -> Result<bool, Box<dyn std::error::Error>> {
-    let f = File::open(file)?;
-    let addr: String = addr.to_string();
-
-    for line in io::BufReader::new(f).lines() {
-        let line = line?;
-        if line == addr {
-            return Ok(true);
-        }
-    }
-
-    return Ok(false);
+fn open_db(database: &str) -> SqliteConnection {
+    // todo: create the database if it doesn't exist
+    SqliteConnection::establish(&database).unwrap()
 }
 
-async fn start(opts: StartOptions) -> Result<(), Box<dyn std::error::Error>> {
+async fn start(db: SqliteConnection, opts: StartOptions) -> Result<(), Box<dyn std::error::Error>> {
     let (tx, mut rx) = mpsc::channel(32);
 
     let registry = Arc::new(Mutex::new(ServerRegistry::new()));
@@ -110,17 +118,15 @@ async fn start(opts: StartOptions) -> Result<(), Box<dyn std::error::Error>> {
         }
 
         // check if server is in ban list
-        if let Some(ref banfile) = opts.banfile {
-            match is_banned(&banfile, &addr).await {
-                Ok(true) => {
-                    eprintln!("Rejected record [banned]: {} @ {addr}:{}", r.name, r.port);
-                    continue;
-                },
-                Err(err) => {
-                    panic!("Failed to check entry: {err}");
-                },
-                _ => {},
-            }
+        match Banlist::is_banned(&db, &addr) {
+            Ok(true) => {
+                eprintln!("Rejected record [banned]: {} @ {addr}:{}", r.name, r.port);
+                continue;
+            },
+            Ok(false) => {},
+            Err(err) => {
+                panic!("Failed to check entry: {err}");
+            },
         }
 
         // add to registry
