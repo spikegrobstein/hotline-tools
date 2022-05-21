@@ -1,13 +1,21 @@
 use diesel::prelude::*;
+
+use chrono::prelude::*;
+
 use super::schema::banlist;
 
 use std::net::Ipv4Addr;
+
+fn now() -> String {
+    Utc::now().to_rfc3339()
+}
 
 #[derive(Queryable)]
 pub struct Banlist {
     pub id: i32,
     pub address: String,
     pub notes: String,
+    pub created_at: String,
 }
 
 #[derive(Insertable)]
@@ -15,6 +23,7 @@ pub struct Banlist {
 struct NewBanlistEntry {
     address: String,
     notes: String,
+    created_at: String,
 }
 
 impl Banlist {
@@ -37,6 +46,7 @@ impl Banlist {
         let new_banlist_entry = NewBanlistEntry {
             address,
             notes,
+            created_at: now(),
         };
 
         diesel::insert_into(banlist::table)
