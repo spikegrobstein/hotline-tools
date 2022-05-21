@@ -241,7 +241,7 @@ async fn handle_banlist(db: SqliteConnection, opts: BanlistOptions) -> Result<()
     }
 }
 
-fn handle_banlist_list(db: &SqliteConnection, opts: BanlistListOptions) -> Result<(), Box<dyn std::error::Error>> {
+fn handle_banlist_list(db: &SqliteConnection, _opts: BanlistListOptions) -> Result<(), Box<dyn std::error::Error>> {
     let banlist = Banlist::list(db)?;
 
     if banlist.len() == 0 {
@@ -270,6 +270,17 @@ async fn handle_password(db: SqliteConnection, opts: PasswordOptions) -> Result<
     }
 }
 
-fn handle_password_list(db: &SqliteConnection, opts: PasswordListOptions) -> Result<(), Box<dyn std::error::Error>> {
-    unimplemented!("not yet implemented.")
+fn handle_password_list(db: &SqliteConnection, _opts: PasswordListOptions) -> Result<(), Box<dyn std::error::Error>> {
+    let passwords = Password::list(db)?;
+
+    if passwords.len() == 0 {
+        eprintln!("No passwords in the database.");
+        return Ok(())
+    }
+
+    for p in passwords {
+        println!("{} {}", p.password, p.notes);
+    }
+
+    Ok(())
 }
