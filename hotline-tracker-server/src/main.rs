@@ -73,6 +73,42 @@ struct BanlistListOptions {
 
 // /banlist ----------------------
 
+// passwords ---------------------
+
+#[derive(Parser, Debug)]
+struct PasswordOptions {
+    #[clap(subcommand)]
+    subcommand: PasswordSubcommand,
+}
+
+#[derive(Parser, Debug)]
+enum PasswordSubcommand {
+    Add(PasswordAddOptions),
+    Remove(PasswordRemoveOptions),
+    List(PasswordListOptions),
+}
+
+#[derive(Parser, Debug)]
+struct PasswordAddOptions {
+    password: String,
+
+    #[clap(default_value="")]
+    notes: String,
+}
+
+#[derive(Parser, Debug)]
+struct PasswordRemoveOptions {
+    password: String,
+}
+
+#[derive(Parser, Debug)]
+struct PasswordListOptions {
+
+}
+
+
+// /password ---------------------
+
 #[derive(Parser, Debug)]
 struct StartOptions {
     /// The IP address to bind the server to and listen for requests and server registrations.
@@ -90,6 +126,7 @@ enum Subcommand {
     /// Start the tracker server
     Start(StartOptions),
     Banlist(BanlistOptions),
+    Password(PasswordOptions),
 }
 
 #[derive(Parser, Debug)]
@@ -113,6 +150,8 @@ async fn main() {
             handle_start(connection, opts).await.unwrap(),
         Subcommand::Banlist(opts) =>
             handle_banlist(connection, opts).await.unwrap(),
+        Subcommand::Password(opts) =>
+            handle_password(connection, opts).await.unwrap(),
     }
 }
 
@@ -202,4 +241,21 @@ fn handle_banlist_list(db: &SqliteConnection, opts: BanlistListOptions) -> Resul
     }
 
     Ok(())
+}
+
+async fn handle_password(db: SqliteConnection, opts: PasswordOptions) -> Result<(), Box<dyn std::error::Error>> {
+    match opts.subcommand {
+        PasswordSubcommand::Add(s_opts) =>
+            Password::add(&db, s_opts.password, s_opts.notes),
+
+        PasswordSubcommand::Remove(s_opts) =>
+            Password::remove(&db, s_opts.password),
+
+        PasswordSubcommand::List(s_opts) =>
+            handle_password_list(&db, s_opts),
+    }
+}
+
+fn handle_password_list(db: &SqliteConnection, opts: PasswordListOptions) -> Result<(), Box<dyn std::error::Error>> {
+    unimplemented!("not yet implemented.")
 }

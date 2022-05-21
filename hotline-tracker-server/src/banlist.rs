@@ -6,7 +6,7 @@ use super::schema::banlist;
 
 use std::net::Ipv4Addr;
 
-fn now() -> String {
+pub fn now() -> String {
     Utc::now().to_rfc3339()
 }
 
