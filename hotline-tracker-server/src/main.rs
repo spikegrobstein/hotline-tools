@@ -36,6 +36,42 @@ use clap::Parser;
 // emit event stream?
 // metrics?
 
+// banlist -----------------------
+
+#[derive(Parser, Debug)]
+enum BanlistSubcommand {
+    Add(BanlistAddOptions),
+    Remove(BanlistRemoveOptions),
+    List(BanlistListOptions),
+}
+
+#[derive(Parser, Debug)]
+struct BanlistOptions {
+    #[clap(subcommand)]
+    subcommand: BanlistSubcommand,
+}
+
+#[derive(Parser, Debug)]
+struct BanlistAddOptions {
+    /// ipv4 address of server to add to banlist
+    address: String,
+
+    #[clap(default_value="")]
+    notes: String,
+}
+
+#[derive(Parser, Debug)]
+struct BanlistRemoveOptions {
+    address: String,
+}
+
+#[derive(Parser, Debug)]
+struct BanlistListOptions {
+    
+}
+
+// /banlist ----------------------
+
 #[derive(Parser, Debug)]
 struct StartOptions {
     /// The IP address to bind the server to and listen for requests and server registrations.
@@ -46,15 +82,13 @@ struct StartOptions {
     /// Must be MacRoman compatible.
     #[clap(long)]
     password: Option<String>,
-
-    #[clap(long)]
-    banfile: Option<String>,
 }
 
 #[derive(Parser, Debug)]
 enum Subcommand {
     /// Start the tracker server
     Start(StartOptions),
+    Banlist(BanlistOptions),
 }
 
 #[derive(Parser, Debug)]
@@ -74,7 +108,10 @@ async fn main() {
     let connection = open_db(&app.database);
 
     match app.subcommand {
-        Subcommand::Start(opts) => start(connection, opts).await.unwrap(),
+        Subcommand::Start(opts) =>
+            handle_start(connection, opts).await.unwrap(),
+        Subcommand::Banlist(opts) =>
+            handle_banlist(connection, opts).await.unwrap(),
     }
 }
 
@@ -83,7 +120,7 @@ fn open_db(database: &str) -> SqliteConnection {
     SqliteConnection::establish(&database).unwrap()
 }
 
-async fn start(db: SqliteConnection, opts: StartOptions) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_start(db: SqliteConnection, opts: StartOptions) -> Result<(), Box<dyn std::error::Error>> {
     let (tx, mut rx) = mpsc::channel(32);
 
     let registry = Arc::new(Mutex::new(ServerRegistry::new()));
@@ -134,6 +171,35 @@ async fn start(db: SqliteConnection, opts: StartOptions) -> Result<(), Box<dyn s
             println!("Accepted record: {} @ {addr}:{}", r.name, r.port);
             registry.register(addr, r);
         }
+    }
+
+    Ok(())
+}
+
+async fn handle_banlist(db: SqliteConnection, opts: BanlistOptions) -> Result<(), Box<dyn std::error::Error>> {
+    match opts.subcommand {
+        BanlistSubcommand::Add(s_opts) =>
+            Banlist::add(&db, s_opts.address, s_opts.notes),
+
+        BanlistSubcommand::Remove(s_opts) =>
+            Banlist::remove(&db, s_opts.address),
+
+        BanlistSubcommand::List(s_opts) => 
+            handle_banlist_list(&db, s_opts),
+    }
+}
+
+fn handle_banlist_list(db: &SqliteConnection, opts: BanlistListOptions) -> Result<(), Box<dyn std::error::Error>> {
+    let banlist = Banlist::list(db)?;
+
+    if banlist.len() == 0 {
+        eprintln!("No servers in banlist.");
+        return Ok(())
+    }
+
+    // print out the list of banned servers.
+    for b in banlist {
+        println!("{} {}", b.address, b.notes);
     }
 
     Ok(())
