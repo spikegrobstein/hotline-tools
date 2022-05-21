@@ -1,5 +1,4 @@
 use diesel::prelude::*;
-use chrono::prelude::*;
 
 use crate::banlist::now;
 

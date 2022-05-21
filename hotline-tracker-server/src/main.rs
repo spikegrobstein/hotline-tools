@@ -171,7 +171,7 @@ async fn main() {
 
 fn open_db(database: &str) -> SqliteConnection {
     // todo: create the database if it doesn't exist
-    SqliteConnection::establish(&database).unwrap()
+    SqliteConnection::establish(database).unwrap()
 }
 
 async fn handle_start(db: SqliteConnection, opts: StartOptions) -> Result<(), Box<dyn std::error::Error>> {
@@ -199,11 +199,9 @@ async fn handle_start(db: SqliteConnection, opts: StartOptions) -> Result<(), Bo
     // otherwise add to the registry
     while let Some((addr, r)) = rx.recv().await {
         // validate credentials
-        if opts.require_password {
-            if ! Password::is_authorized(&db, &r.password).unwrap() {
-                eprintln!("Rejected record [bad credentials]: {} @ {addr}:{}", r.name, r.port);
-                continue;
-            }
+        if opts.require_password && ! Password::is_authorized(&db, &r.password).unwrap() {
+            eprintln!("Rejected record [bad credentials]: {} @ {addr}:{}", r.name, r.port);
+            continue;
         }
 
         // check if server is in ban list
@@ -244,7 +242,7 @@ async fn handle_banlist(db: SqliteConnection, opts: BanlistOptions) -> Result<()
 fn handle_banlist_list(db: &SqliteConnection, _opts: BanlistListOptions) -> Result<(), Box<dyn std::error::Error>> {
     let banlist = Banlist::list(db)?;
 
-    if banlist.len() == 0 {
+    if banlist.is_empty() {
         eprintln!("No servers in banlist.");
         return Ok(())
     }
@@ -273,7 +271,7 @@ async fn handle_password(db: SqliteConnection, opts: PasswordOptions) -> Result<
 fn handle_password_list(db: &SqliteConnection, _opts: PasswordListOptions) -> Result<(), Box<dyn std::error::Error>> {
     let passwords = Password::list(db)?;
 
-    if passwords.len() == 0 {
+    if passwords.is_empty() {
         eprintln!("No passwords in the database.");
         return Ok(())
     }
