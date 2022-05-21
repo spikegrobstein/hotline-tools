@@ -41,8 +41,13 @@ use clap::Parser;
 
 #[derive(Parser, Debug)]
 enum BanlistSubcommand {
+    /// Add a server to the banlist by ipv4 address
     Add(BanlistAddOptions),
+
+    /// Remove a server from the banlist
     Remove(BanlistRemoveOptions),
+
+    /// List all servers in the banlist
     List(BanlistListOptions),
 }
 
@@ -57,12 +62,14 @@ struct BanlistAddOptions {
     /// ipv4 address of server to add to banlist
     address: String,
 
+    /// Notes for this entry in the banlist (a freeform string)
     #[clap(default_value="")]
     notes: String,
 }
 
 #[derive(Parser, Debug)]
 struct BanlistRemoveOptions {
+    /// the ipv4 address of the server to remove from the banlist
     address: String,
 }
 
@@ -83,21 +90,28 @@ struct PasswordOptions {
 
 #[derive(Parser, Debug)]
 enum PasswordSubcommand {
+    /// Add an authorizzed password for server registrations
     Add(PasswordAddOptions),
+    /// Remove an authorized password
     Remove(PasswordRemoveOptions),
+
+    /// List all authorized passwords
     List(PasswordListOptions),
 }
 
 #[derive(Parser, Debug)]
 struct PasswordAddOptions {
+    /// The required password for servers to use when registering with this tracker
     password: String,
 
+    /// Notes about this password entry (a freeform string)
     #[clap(default_value="")]
     notes: String,
 }
 
 #[derive(Parser, Debug)]
 struct PasswordRemoveOptions {
+    /// The password used for authorizing server registrations.
     password: String,
 }
 
