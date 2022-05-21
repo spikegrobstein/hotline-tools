@@ -5,6 +5,7 @@ use diesel::prelude::*;
 
 mod schema;
 mod banlist;
+mod password;
 
 mod registration_listener;
 mod server_registry;
@@ -14,9 +15,9 @@ mod tracker_codec;
 use registration_listener::RegistrationListener;
 use server_registry::ServerRegistry;
 use tracker_listener::TrackerListener;
-use macroman_tools::MacRomanString;
 
 use banlist::Banlist;
+use password::Password;
 
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -81,7 +82,7 @@ struct StartOptions {
     /// A required password for servers to pass in order to register with this tracker.
     /// Must be MacRoman compatible.
     #[clap(long)]
-    password: Option<String>,
+    require_password: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -139,16 +140,14 @@ async fn handle_start(db: SqliteConnection, opts: StartOptions) -> Result<(), Bo
         registration_listener.listen().await.unwrap();
     });
 
-    let password: Option<MacRomanString<255>> = opts.password.map(|pw| MacRomanString::from(pw.as_str()));
-
     // get each new registration as they come in and handle it
     // if we require a password, then validate that the password is correct
     // reject incorrect passwords
     // otherwise add to the registry
     while let Some((addr, r)) = rx.recv().await {
         // validate credentials
-        if let Some(ref pw) = password {
-            if pw != &r.password {
+        if opts.require_password {
+            if ! Password::is_authorized(&db, &r.password).unwrap() {
                 eprintln!("Rejected record [bad credentials]: {} @ {addr}:{}", r.name, r.port);
                 continue;
             }
