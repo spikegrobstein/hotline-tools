@@ -9,9 +9,11 @@ edition = "2021"
 bytes = "1.1.0"
 chrono = "0.4.19"
 clap = { version = "3.1.18", features = ["cargo", "derive"] }
-diesel = { version = "1.4.8", features = ["sqlite", "chrono"] }
+diesel = { version = "1.4.8", features = ["sqlite"] }
 futures = "0.3.21"
 hotline-tracker = { path = "../hotline-tracker" }
 macroman-tools = { path = "../macroman-tools/" }
+serde = { version = "1.0.137", features = ["derive"] }
 tokio = { version = "1.18.0", features = ["full"] }
 tokio-util = { version = "0.7.1", features = ["codec"] }
+toml = "0.5.9"

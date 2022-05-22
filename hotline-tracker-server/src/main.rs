@@ -11,6 +11,7 @@ mod registration_listener;
 mod server_registry;
 mod tracker_listener;
 mod tracker_codec;
+mod config;
 
 use registration_listener::RegistrationListener;
 use server_registry::ServerRegistry;
@@ -19,17 +20,21 @@ use tracker_listener::TrackerListener;
 use banlist::Banlist;
 use password::Password;
 
+use config::Config;
+
 use std::sync::Arc;
 use std::sync::Mutex;
+
+use std::fs;
 
 use tokio::sync::mpsc;
 
 use clap::Parser;
 
 // config
-// banlist (array of addresses)
-// passwords (array of passwords)
-// require_password (boolean)
+// require-password (boolean)
+// database file path
+// listen interface
 
 // server registry listens on a channel
 // registration listener sends registratoins through channel
@@ -126,13 +131,13 @@ struct PasswordListOptions {
 #[derive(Parser, Debug)]
 struct StartOptions {
     /// The IP address to bind the server to and listen for requests and server registrations.
-    #[clap(long, default_value="0.0.0.0")]
-    bind_address: String,
+    #[clap(long)]
+    bind_address: Option<String>,
 
     /// A required password for servers to pass in order to register with this tracker.
     /// Must be MacRoman compatible.
     #[clap(long)]
-    require_password: bool,
+    require_password: Option<bool>,
 }
 
 #[derive(Parser, Debug)]
@@ -148,20 +153,36 @@ struct App {
     #[clap(subcommand)]
     subcommand: Subcommand,
 
-    /// Path to the sqlite3 database
-    #[clap(long, default_value="./tracker.sqlite3")]
-    database: String,
+    /// Path to config file
+    #[clap(long, short)]
+    config: Option<String>,
+
+    #[clap(long)]
+    database: Option<String>,
 }
 
 #[tokio::main]
 async fn main() {
     let app = App::parse();
 
-    let connection = open_db(&app.database);
+    // figure out config...
+    let config_path = config::find_config(app.config);
+    let mut config = config::load(config_path).unwrap();
+
+    if let Some(db) = app.database {
+        config.database = db;
+    }
+
+    // make sure that config base dir exists
+    fs::create_dir_all(&config.base_path).unwrap();
+
+    eprintln!("Config: {:#?}", config);
+
+    let connection = open_db(&config.database);
 
     match app.subcommand {
         Subcommand::Start(opts) =>
-            handle_start(connection, opts).await.unwrap(),
+            handle_start(connection, opts, config).await.unwrap(),
         Subcommand::Banlist(opts) =>
             handle_banlist(connection, opts).await.unwrap(),
         Subcommand::Password(opts) =>
@@ -174,13 +195,25 @@ fn open_db(database: &str) -> SqliteConnection {
     SqliteConnection::establish(database).unwrap()
 }
 
-async fn handle_start(db: SqliteConnection, opts: StartOptions) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_start(db: SqliteConnection, opts: StartOptions, mut config: Config) -> Result<(), Box<dyn std::error::Error>> {
+    if let Some(bind_address) = opts.bind_address {
+        config.bind_address = bind_address;
+    }
+
+    if let Some(require_password) = opts.require_password {
+        config.require_password = require_password;
+    }
+
+    // print some info
+    eprintln!("bind address: {}", config.bind_address);
+    eprintln!("require_password: {}", config.require_password);
+
     let (tx, mut rx) = mpsc::channel(32);
 
     let registry = Arc::new(Mutex::new(ServerRegistry::new()));
 
-    let mut registration_listener = RegistrationListener::new(&opts.bind_address, RegistrationListener::REGISTRATION_LISTEN_PORT, tx).await?;
-    let tracker_server = TrackerListener::new(&opts.bind_address, TrackerListener::TRACKER_LISTEN_PORT, registry.clone()).await?;
+    let mut registration_listener = RegistrationListener::new(&config.bind_address, RegistrationListener::REGISTRATION_LISTEN_PORT, tx).await?;
+    let tracker_server = TrackerListener::new(&config.bind_address, TrackerListener::TRACKER_LISTEN_PORT, registry.clone()).await?;
 
     // listen for listing connections
     tokio::spawn(async move {
@@ -199,7 +232,7 @@ async fn handle_start(db: SqliteConnection, opts: StartOptions) -> Result<(), Bo
     // otherwise add to the registry
     while let Some((addr, r)) = rx.recv().await {
         // validate credentials
-        if opts.require_password && ! Password::is_authorized(&db, &r.password).unwrap() {
+        if config.require_password && ! Password::is_authorized(&db, &r.password).unwrap() {
             eprintln!("Rejected record [bad credentials]: {} @ {addr}:{}", r.name, r.port);
             continue;
         }
