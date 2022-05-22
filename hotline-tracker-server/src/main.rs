@@ -201,7 +201,6 @@ async fn main() {
 }
 
 fn open_db(database: &str) -> SqliteConnection {
-    // todo: create the database if it doesn't exist
     SqliteConnection::establish(database).unwrap()
 }
 
