@@ -1,14 +1,10 @@
 use diesel::prelude::*;
 
-use chrono::prelude::*;
-
 use super::schema::banlist;
 
 use std::net::Ipv4Addr;
 
-pub fn now() -> String {
-    Utc::now().to_rfc3339()
-}
+use crate::util::now;
 
 #[derive(Queryable)]
 pub struct Banlist {

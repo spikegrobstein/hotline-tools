@@ -1,6 +1,6 @@
 use diesel::prelude::*;
 
-use crate::banlist::now;
+use crate::util::now;
 
 use super::schema::passwords;
 

@@ -6,6 +6,7 @@ use diesel::prelude::*;
 mod schema;
 mod banlist;
 mod password;
+mod util;
 
 mod registration_listener;
 mod server_registry;
