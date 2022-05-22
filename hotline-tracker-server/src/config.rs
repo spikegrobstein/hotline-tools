@@ -4,6 +4,8 @@ use serde::Deserialize;
 use std::path::PathBuf;
 use std::fs;
 
+pub const DEFAULT_CONFIG_FILENAME: &str = "tracker.toml";
+
 // load from (precidence):
 // cli argument
 // TRACKER_CONFIG environment variable
@@ -37,45 +39,38 @@ pub struct ParsedServerConfig {
     pub database: Option<String>,
 }
 
-pub fn find_config(cli_arg: Option<String>) -> String {
-    if let Some(path) = cli_arg {
-        return path;
-    }
-
+/// attempt to locate the tracker.toml file which contains the tracker server configuration. This
+/// functoin will return the path to the config file itself if it's found or if it was passed in
+/// explicitly, even if it doesn't exist.
+pub fn find_config() -> Option<String> {
     if let Ok(path) = std::env::var("TRACKER_CONFIG") {
-        return path;
+        return Some(path);
     }
 
     if let Ok(home_path) = std::env::var("HOME") {
         let mut path = PathBuf::from(&home_path);
-        path.push(".hotline/tracker.toml");
+        path.push(format!(".hotline/{DEFAULT_CONFIG_FILENAME}"));
 
         if path.exists() {
-            return path.to_str().unwrap().into();
+            return Some(path.to_str().unwrap().into());
         }
 
         let mut path = PathBuf::from(&home_path);
-        path.push(".config/hotline/tracker.toml");
+        path.push(format!(".config/hotline/{DEFAULT_CONFIG_FILENAME}"));
 
         if path.exists() {
-            return path.to_str().unwrap().into();
+            return Some(path.to_str().unwrap().into());
         }
     }
 
-    // fallback to /etc
-    let path = PathBuf::from("/etc/hotline/tracker.toml");
+    // lastly, system-level config at /etc
+    let path = PathBuf::from(format!("/etc/hotline/{DEFAULT_CONFIG_FILENAME}"));
     if path.exists() {
-        return path.to_str().unwrap().into();
+        return Some(path.to_str().unwrap().into());
     }
 
-    if let Ok(home_path) = std::env::var("HOME") {
-        let mut path = PathBuf::from(home_path);
-        path.push(".config/hotline/tracker.toml");
-
-        return path.to_str().unwrap().into();
-    }
-
-    panic!("Cannot construct default path.");
+    // if no config found, return none
+    None
 }
 
 /// try to load the config from the provided location

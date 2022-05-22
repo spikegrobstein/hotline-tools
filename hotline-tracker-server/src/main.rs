@@ -165,15 +165,25 @@ struct App {
 async fn main() {
     let app = App::parse();
 
-    // figure out config...
-    let config_path = config::find_config(app.config);
+    // try to find the config
+    // if it's set on the CLI, use that
+    // otherwise fall back to config::find_config()
+    // and if that doesn't find it, default to current directory
+    let config_path = app.config
+        .or_else(|| config::find_config())
+        .unwrap_or_else(|| {
+            eprintln!("Using current directory for data/config.");
+            format!("./{}", config::DEFAULT_CONFIG_FILENAME)
+        });
+
     let mut config = config::load(config_path).unwrap();
 
+    // override the DB path in the config with the CLI arg if present
     if let Some(db) = app.database {
         config.database = db;
     }
 
-    // make sure that config base dir exists
+    // make sure that config base dir exists; this is where we'll write the DB file
     fs::create_dir_all(&config.base_path).unwrap();
 
     eprintln!("Config: {:#?}", config);
