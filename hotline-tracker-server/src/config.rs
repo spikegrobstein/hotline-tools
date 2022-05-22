@@ -1,4 +1,3 @@
-use toml;
 use serde::Deserialize;
 
 use std::path::PathBuf;
@@ -112,7 +111,7 @@ pub fn load(path: String) -> Result<Config, Box<dyn std::error::Error>> {
                 db
             } else {
                 // it's relative... so it should be relative to our base_path
-                let mut database = base_path.clone().to_path_buf();
+                let mut database = base_path.to_path_buf();
                 database.push(db);
                 fs::canonicalize(&database).unwrap().to_str().unwrap().into()
             }

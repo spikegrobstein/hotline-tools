@@ -171,7 +171,7 @@ async fn main() {
     // otherwise fall back to config::find_config()
     // and if that doesn't find it, default to current directory
     let config_path = app.config
-        .or_else(|| config::find_config())
+        .or_else(config::find_config)
         .unwrap_or_else(|| {
             eprintln!("Using current directory for data/config.");
             format!("./{}", config::DEFAULT_CONFIG_FILENAME)
