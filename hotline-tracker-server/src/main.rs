@@ -145,7 +145,11 @@ struct StartOptions {
 enum Subcommand {
     /// Start the tracker server
     Start(StartOptions),
+
+    /// Add and remove servers from the banlist
     Banlist(BanlistOptions),
+
+    /// Add and remove passwords to limit registrations
     Password(PasswordOptions),
 }
 
@@ -158,6 +162,8 @@ struct App {
     #[clap(long, short)]
     config: Option<String>,
 
+    /// Override the path to the database file. By default this is adjacent to the config file or
+    /// the current working directory if no config file.
     #[clap(long)]
     database: Option<String>,
 }
