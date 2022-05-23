@@ -9,6 +9,7 @@ use hotline_tracker::TrackerPacket;
 use tokio_util::codec::Framed;
 use futures::{StreamExt, SinkExt};
 
+use log::{debug, info};
 
 pub struct TrackerListener {
     socket: TcpListener,
@@ -39,12 +40,12 @@ impl TrackerListener {
                 let codec = TrackerCodec::new();
                 let mut framed_stream = Framed::new(socket, codec);
 
-                eprintln!("got a connection from {addr}");
+                info!("got a connection from {addr}");
 
                 if framed_stream.next().await.unwrap().is_ok() {
                     let (update, servers) = {
                         let mut registry = registry.lock().unwrap();
-                        println!("got header.");
+                        debug!("got header.");
                         let update = registry.create_update_record();
 
                         let servers = registry.server_records();
@@ -52,14 +53,14 @@ impl TrackerListener {
                         (update, servers)
                     };
 
-                    eprintln!("sending header and update");
+                    debug!("sending header and update");
                     framed_stream.send(TrackerPacket::Header).await.unwrap();
                     framed_stream.send(TrackerPacket::Update(update)).await.unwrap();
 
                     // TODO: this is probably fine for the scale we're at today, but this should
                     // emit updates in chunks.
                     for s in servers {
-                        eprintln!("sending server record");
+                        debug!("sending server record");
                         framed_stream.send(TrackerPacket::Server(s.into())).await.unwrap();
                     }
                 }

@@ -10,8 +10,10 @@ bytes = "1.1.0"
 chrono = "0.4.19"
 clap = { version = "3.1.18", features = ["cargo", "derive", "wrap_help"] }
 diesel = { version = "1.4.8", features = ["sqlite"] }
+env_logger = "0.9.0"
 futures = "0.3.21"
 hotline-tracker = { path = "../hotline-tracker" }
+log = { version = "0.4.17", features = ["std"] }
 macroman-tools = { path = "../macroman-tools/" }
 serde = { version = "1.0.137", features = ["derive"] }
 tokio = { version = "1.18.0", features = ["full"] }

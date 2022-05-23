@@ -4,6 +4,8 @@ use std::default::Default;
 
 use tokio::time::{Instant, Duration};
 
+use log::debug;
+
 use hotline_tracker::{
     ServerRecord,
     RegistrationRecord,
@@ -53,13 +55,13 @@ impl ServerRegistry {
         self.servers.retain(|&k, v| {
             let expires_at = v.datestamp + self.server_expiry;
 
-            eprintln!("server record expires_at: {:?}", expires_at);
+            debug!("server record expires_at: {:?}", expires_at);
 
             // duration == 0 //-> not expired
             let is_expired = Instant::now().duration_since(expires_at) != Duration::ZERO;
 
             if is_expired {
-                eprintln!("server {k} expired.");
+                debug!("server {k} expired.");
             }
 
             // return true to keep

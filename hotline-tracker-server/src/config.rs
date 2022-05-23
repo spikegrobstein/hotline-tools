@@ -1,5 +1,7 @@
 use serde::Deserialize;
 
+use log::debug;
+
 use std::path::PathBuf;
 use std::fs;
 
@@ -78,9 +80,9 @@ pub fn find_config() -> Option<String> {
 pub fn load(path: String) -> Result<Config, Box<dyn std::error::Error>> {
     let config_path = PathBuf::from(&path);
 
-    eprintln!("Attempting to load from {}", config_path.to_str().unwrap());
-
     if ! config_path.exists() {
+        debug!("{path}: Config does't exist. Using default config.");
+
         let base_path = config_path.parent().unwrap();
         let mut database = base_path.to_path_buf();
         database.push("tracker.sqlite3");
@@ -96,6 +98,8 @@ pub fn load(path: String) -> Result<Config, Box<dyn std::error::Error>> {
         })
     }
 
+    debug!("Using config: {path}");
+
     // load it
     let config_data = std::fs::read_to_string(&path)?;
     let parsed_config: ParsedConfig = toml::from_str(&config_data)?;
@@ -107,9 +111,12 @@ pub fn load(path: String) -> Result<Config, Box<dyn std::error::Error>> {
             let database = PathBuf::from(&db);
 
             if database.is_absolute() {
+                debug!("Using absolute database path.");
                 // it's absolute, let's use this value
                 db
             } else {
+                debug!("Using relative database path.");
+
                 // it's relative... so it should be relative to our base_path
                 let mut database = base_path.to_path_buf();
                 database.push(db);

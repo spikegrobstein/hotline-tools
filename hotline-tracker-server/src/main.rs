@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate diesel;
 
+use log::{info, warn, debug};
+
 use diesel::prelude::*;
 
 mod schema;
@@ -31,6 +33,8 @@ use std::fs;
 use tokio::sync::mpsc;
 
 use clap::Parser;
+
+use env_logger::{Builder, Env};
 
 // config
 // require-password (boolean)
@@ -172,6 +176,10 @@ struct App {
 async fn main() {
     let app = App::parse();
 
+    let env = Env::default()
+        .filter_or("TRACKER_LOG_LEVEL", "info");
+    Builder::from_env(env).init();
+
     // try to find the config
     // if it's set on the CLI, use that
     // otherwise fall back to config::find_config()
@@ -179,7 +187,7 @@ async fn main() {
     let config_path = app.config
         .or_else(config::find_config)
         .unwrap_or_else(|| {
-            eprintln!("Using current directory for data/config.");
+            debug!("Using current directory for data/config.");
             format!("./{}", config::DEFAULT_CONFIG_FILENAME)
         });
 
@@ -193,7 +201,7 @@ async fn main() {
     // make sure that config base dir exists; this is where we'll write the DB file
     fs::create_dir_all(&config.base_path).unwrap();
 
-    eprintln!("Config: {:#?}", config);
+    debug!("Config: {:#?}", config);
 
     let connection = open_db(&config.database);
 
@@ -208,6 +216,7 @@ async fn main() {
 }
 
 fn open_db(database: &str) -> SqliteConnection {
+    info!("Using database: {database}");
     SqliteConnection::establish(database).unwrap()
 }
 
@@ -221,8 +230,8 @@ async fn handle_start(db: SqliteConnection, opts: StartOptions, mut config: Conf
     }
 
     // print some info
-    eprintln!("bind address: {}", config.bind_address);
-    eprintln!("require_password: {}", config.require_password);
+    info!("bind address: {}", config.bind_address);
+    info!("require_password: {}", config.require_password);
 
     let (tx, mut rx) = mpsc::channel(32);
 
@@ -249,14 +258,14 @@ async fn handle_start(db: SqliteConnection, opts: StartOptions, mut config: Conf
     while let Some((addr, r)) = rx.recv().await {
         // validate credentials
         if config.require_password && ! Password::is_authorized(&db, &r.password).unwrap() {
-            eprintln!("Rejected record [bad credentials]: {} @ {addr}:{}", r.name, r.port);
+            warn!("Rejected record [bad credentials]: {} @ {addr}:{}", r.name, r.port);
             continue;
         }
 
         // check if server is in ban list
         match Banlist::is_banned(&db, &addr) {
             Ok(true) => {
-                eprintln!("Rejected record [banned]: {} @ {addr}:{}", r.name, r.port);
+                warn!("Rejected record [banned]: {} @ {addr}:{}", r.name, r.port);
                 continue;
             },
             Ok(false) => {},
@@ -267,7 +276,7 @@ async fn handle_start(db: SqliteConnection, opts: StartOptions, mut config: Conf
 
         // add to registry
         if let Ok(mut registry) = registry.lock() {
-            println!("Accepted record: {} @ {addr}:{}", r.name, r.port);
+            info!("Accepted record: {} @ {addr}:{}", r.name, r.port);
             registry.register(addr, r);
         }
     }
