@@ -29,6 +29,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use std::fs;
+use std::process;
 
 use tokio::sync::mpsc;
 
@@ -242,13 +243,31 @@ async fn handle_start(db: SqliteConnection, opts: StartOptions, mut config: Conf
 
     // listen for listing connections
     tokio::spawn(async move {
-        tracker_server.listen().await.unwrap();
+        match tracker_server.listen().await {
+            Ok(_) => {
+                info!("Tracker server completed. Exiting.");
+                process::exit(0);
+            },
+            Err(e) => {
+                error!("Tracker server failed: {:?}", e);
+                process::exit(1);
+            }
+        }
     });
 
     // listen for registrations. these will come through on the rx, from above.
     tokio::spawn(async move {
         // start listening for registrations
-        registration_listener.listen().await.unwrap();
+        match registration_listener.listen().await {
+            Ok(_) => {
+                info!("Registration server completed. Exiting.");
+                process::exit(0);
+            },
+            Err(e) => {
+                error!("Registration server failed: {:?}", e);
+                process::exit(1);
+            }
+        }
     });
 
     // get each new registration as they come in and handle it
