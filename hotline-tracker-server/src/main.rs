@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate diesel;
 
-use log::{info, warn, debug};
+use log::{info, warn, debug, error};
 
 use diesel::prelude::*;
 
@@ -270,7 +270,9 @@ async fn handle_start(db: SqliteConnection, opts: StartOptions, mut config: Conf
             },
             Ok(false) => {},
             Err(err) => {
-                panic!("Failed to check entry: {err}");
+                // report the error... skip the entry... move on.
+                error!("Failed to check entry: {err}");
+                continue;
             },
         }
 
