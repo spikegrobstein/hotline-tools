@@ -143,7 +143,7 @@ struct StartOptions {
     /// A required password for servers to pass in order to register with this tracker.
     /// Must be MacRoman compatible.
     #[clap(long)]
-    require_password: Option<bool>,
+    require_password: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -226,8 +226,15 @@ async fn handle_start(db: SqliteConnection, opts: StartOptions, mut config: Conf
         config.bind_address = bind_address;
     }
 
-    if let Some(require_password) = opts.require_password {
-        config.require_password = require_password;
+    if opts.require_password {
+        config.require_password = opts.require_password;
+
+        if config.require_password {
+            let passwordcount = Password::len(&db)?;
+            if passwordcount == 0 {
+                warn!("Password is required but no passwords in database. Use 'password add <password>' to add new passwords.");
+            }
+        }
     }
 
     // print some info

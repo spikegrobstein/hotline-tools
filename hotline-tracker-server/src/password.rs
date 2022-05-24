@@ -66,4 +66,15 @@ impl Password {
 
         Ok(results)
     }
+
+    pub fn len(db: &SqliteConnection) -> Result<i64, Box<dyn std::error::Error>> {
+        use crate::schema::passwords::dsl::*;
+
+        // FIXME: surely there's a better way to do this.
+        let result = passwords.filter(id.gt(0))
+            .count()
+            .first(db)?;
+
+        Ok(result)
+    }
 }

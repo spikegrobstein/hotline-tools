@@ -69,4 +69,15 @@ impl Banlist {
 
         Ok(results)
     }
+
+    pub fn len(db: &SqliteConnection) -> Result<i64, Box<dyn std::error::Error>> {
+        use crate::schema::banlist::dsl::*;
+
+        // FIXME: surely there's a better way to do this.
+        let result = banlist.filter(id.gt(0))
+            .count()
+            .first(db)?;
+
+        Ok(result)
+    }
 }
