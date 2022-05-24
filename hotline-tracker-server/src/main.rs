@@ -144,6 +144,11 @@ struct StartOptions {
     /// Must be MacRoman compatible.
     #[clap(long)]
     require_password: bool,
+
+    /// Explicitly remove any password requirement from the registration server. This will override
+    /// whatever is in the config file.
+    #[clap(long)]
+    no_require_password: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -228,8 +233,14 @@ async fn handle_start(db: SqliteConnection, opts: StartOptions, mut config: Conf
 
     let passwordcount = Password::len(&db)?;
 
+    // if the user passed --require-password on the CLI
+    // then assign that in our config as well, overriding whatever is there.
     if opts.require_password {
+        debug!("CLI sets a password requirement");
         config.require_password = opts.require_password;
+    } else if opts.no_require_password {
+        debug!("CLI removes any password requirement.");
+        config.require_password = false;
     }
 
     if config.require_password && passwordcount == 0 {
