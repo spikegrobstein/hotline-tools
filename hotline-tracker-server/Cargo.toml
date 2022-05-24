@@ -16,6 +16,7 @@ hotline-tracker = { path = "../hotline-tracker" }
 log = { version = "0.4.17", features = ["std"] }
 macroman-tools = { path = "../macroman-tools/" }
 serde = { version = "1.0.137", features = ["derive"] }
+thiserror = "1.0.31"
 tokio = { version = "1.18.0", features = ["full"] }
 tokio-util = { version = "0.7.1", features = ["codec"] }
 toml = "0.5.9"

@@ -3,6 +3,8 @@ use hotline_tracker::{TrackerPacket, Header};
 
 use bytes::BytesMut;
 
+use thiserror::Error;
+
 #[derive(PartialEq)]
 enum State {
     Initialized,
@@ -21,9 +23,24 @@ impl TrackerCodec {
     }
 }
 
+#[derive(Debug, Error)]
+pub enum CodecError {
+    #[error("Invalid header: {0:?}/{1}")]
+    InvalidHeader([u8; 4], u16),
+
+    #[error("Failed to get header data")]
+    NoHeader,
+
+    #[error("Received unexpected data")]
+    UnexpectedData,
+
+    #[error("IO Error")]
+    IoError(#[from] std::io::Error)
+}
+
 impl Decoder for TrackerCodec {
     type Item = TrackerPacket;
-    type Error = std::io::Error;
+    type Error = CodecError;
 
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
         if self.state == State::Initialized {
@@ -33,13 +50,13 @@ impl Decoder for TrackerCodec {
                     return Ok(Some(TrackerPacket::Header))
                 }
 
-                panic!("bad header: {:?} / {}", header.magic_word, header.version);
+                return Err(CodecError::InvalidHeader(header.magic_word, header.version));
             }
 
-            panic!("failed to get header");
+            return Err(CodecError::NoHeader)
         }
 
-        panic!("got data for some reason.");
+        Err(CodecError::UnexpectedData)
     }
 }
 
