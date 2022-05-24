@@ -4,6 +4,14 @@ use std::net::{SocketAddr, IpAddr, Ipv4Addr};
 
 use hotline_tracker::RegistrationRecord;
 
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum RegistrationListenerError {
+    #[error("No support for IPv6")]
+    UnsupportedProtocol,
+}
+
 pub struct RegistrationListener {
     socket: UdpSocket,
     buf: [u8; 780],
@@ -36,8 +44,7 @@ impl RegistrationListener {
             if let SocketAddr::V4(addr) = addr {
                 self.sender.send((*addr.ip(), r)).await?;
             } else {
-                // TODO: this should return an Err
-                panic!("no support for ipv6")
+                return Err(Box::new(RegistrationListenerError::UnsupportedProtocol))
             }
         }
     }
