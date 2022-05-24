@@ -226,16 +226,18 @@ async fn handle_start(db: SqliteConnection, opts: StartOptions, mut config: Conf
         config.bind_address = bind_address;
     }
 
+    let passwordcount = Password::len(&db)?;
+
     if opts.require_password {
         config.require_password = opts.require_password;
-
-        if config.require_password {
-            let passwordcount = Password::len(&db)?;
-            if passwordcount == 0 {
-                warn!("Password is required but no passwords in database. Use 'password add <password>' to add new passwords.");
-            }
-        }
     }
+
+    if config.require_password && passwordcount == 0 {
+        warn!("Password is required but no passwords in database. Use 'password add <password>' to add new passwords.");
+    } else if ! config.require_password && passwordcount > 0 {
+        warn!("Password is not required but there are {passwordcount} password(s) in the database.");
+    }
+
 
     // print some info
     info!("bind address: {}", config.bind_address);
