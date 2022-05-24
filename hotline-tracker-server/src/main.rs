@@ -307,14 +307,25 @@ async fn handle_start(db: SqliteConnection, opts: StartOptions, mut config: Conf
 
 async fn handle_banlist(db: SqliteConnection, opts: BanlistOptions) -> Result<(), Box<dyn std::error::Error>> {
     match opts.subcommand {
-        BanlistSubcommand::Add(s_opts) =>
-            Banlist::add(&db, s_opts.address, s_opts.notes),
+        BanlistSubcommand::Add(s_opts) => {
+            Banlist::add(&db, &s_opts.address, &s_opts.notes)
+                .and_then(|_| {
+                    eprintln!("Added {} to banlist.", s_opts.address);
+                    Ok(())
+                })
+        },
 
-        BanlistSubcommand::Remove(s_opts) =>
-            Banlist::remove(&db, s_opts.address),
+        BanlistSubcommand::Remove(s_opts) => {
+            Banlist::remove(&db, &s_opts.address)
+                .and_then(|_| {
+                    eprintln!("Removed {} from banlist.", s_opts.address);
+                    Ok(())
+                })
+        },
 
-        BanlistSubcommand::List(s_opts) => 
-            handle_banlist_list(&db, s_opts),
+        BanlistSubcommand::List(s_opts) => {
+            handle_banlist_list(&db, s_opts)
+        },
     }
 }
 
@@ -336,14 +347,25 @@ fn handle_banlist_list(db: &SqliteConnection, _opts: BanlistListOptions) -> Resu
 
 async fn handle_password(db: SqliteConnection, opts: PasswordOptions) -> Result<(), Box<dyn std::error::Error>> {
     match opts.subcommand {
-        PasswordSubcommand::Add(s_opts) =>
-            Password::add(&db, s_opts.password, s_opts.notes),
+        PasswordSubcommand::Add(s_opts) => {
+            Password::add(&db, &s_opts.password, &s_opts.notes)
+                .and_then(|_| {
+                    eprintln!("Added password to the password list.");
+                    Ok(())
+                })
+        },
 
-        PasswordSubcommand::Remove(s_opts) =>
-            Password::remove(&db, s_opts.password),
+        PasswordSubcommand::Remove(s_opts) => {
+            Password::remove(&db, &s_opts.password)
+                .and_then(|_| {
+                    eprintln!("Removed password from password list.");
+                    Ok(())
+                })
+        },
 
-        PasswordSubcommand::List(s_opts) =>
-            handle_password_list(&db, s_opts),
+        PasswordSubcommand::List(s_opts) => {
+            handle_password_list(&db, s_opts)
+        },
     }
 }
 

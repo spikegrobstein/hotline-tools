@@ -16,9 +16,9 @@ pub struct Password {
 
 #[derive(Insertable)]
 #[table_name="passwords"]
-struct NewPasswordEntry {
-    password: String,
-    notes: String,
+struct NewPasswordEntry<'a> {
+    password: &'a str,
+    notes: &'a str,
     created_at: String,
 }
 
@@ -35,7 +35,7 @@ impl Password {
         Ok(results.len() == 1)
     }
 
-    pub fn add(db: &SqliteConnection, password: String, notes: String) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn add(db: &SqliteConnection, password: &str, notes: &str) -> Result<(), Box<dyn std::error::Error>> {
         let new_password = NewPasswordEntry {
             password,
             notes,
@@ -49,7 +49,7 @@ impl Password {
         Ok(())
     }
 
-    pub fn remove(db: &SqliteConnection, password_to_delete: String) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn remove(db: &SqliteConnection, password_to_delete: &str) -> Result<(), Box<dyn std::error::Error>> {
         use crate::schema::passwords::dsl::*;
 
         diesel::delete(passwords.filter(password.eq(password_to_delete)))

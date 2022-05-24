@@ -16,9 +16,9 @@ pub struct Banlist {
 
 #[derive(Insertable)]
 #[table_name="banlist"]
-struct NewBanlistEntry {
-    address: String,
-    notes: String,
+struct NewBanlistEntry<'a> {
+    address: &'a str,
+    notes: &'a str,
     created_at: String,
 }
 
@@ -35,7 +35,7 @@ impl Banlist {
         Ok(results.len() == 1)
     }
 
-    pub fn add(db: &SqliteConnection, address: String, notes: String) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn add(db: &SqliteConnection, address: &str, notes: &str) -> Result<(), Box<dyn std::error::Error>> {
         // todo: add a better validation error here
         let _: Ipv4Addr = address.parse()?;
 
@@ -52,7 +52,7 @@ impl Banlist {
         Ok(())
     }
 
-    pub fn remove(db: &SqliteConnection, addr: String) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn remove(db: &SqliteConnection, addr: &str) -> Result<(), Box<dyn std::error::Error>> {
         use crate::schema::banlist::dsl::*;
 
         diesel::delete(banlist.filter(address.eq(addr)))
