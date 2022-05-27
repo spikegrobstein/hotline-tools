@@ -88,13 +88,13 @@ The config file is [TOML](https://toml.io) as the filename implies. The default 
 [server]
 
 # The address to bind all servers to (TCP port 5498 and UDP port 5499)
-bind-address = 0.0.0.0
+bind-address = "0.0.0.0"
 
 # require a password for servers to register
 require-password = false
 
 # path to the database (relative paths are relative to this file)
-database = ./tracker.sqlite3
+database = "./tracker.sqlite3"
 ```
 
 ## Database
