@@ -14,10 +14,18 @@ cargo build --release
 cp ../target/release/hotline-tracker-server /usr/local/bin
 ```
 
-Then you can run it:
+Then you can run it using the `start` subcommand:
 
 ```
 hotline-tracker-server start
+```
+
+The server currently only runs in the foreground and outputs its log to STDOUT using the `info` log level.
+
+Log levels for the running server can be controlled through the `TRACKER_LOG_LEVEL` environment variable:
+
+```
+TRACKER_LOG_LEVEL=debug hotline-tracker-server start
 ```
 
 or get help:
