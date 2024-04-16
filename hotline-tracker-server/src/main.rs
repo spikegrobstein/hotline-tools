@@ -1,20 +1,20 @@
 #[macro_use]
 extern crate diesel;
 
-use log::{info, warn, debug, error};
+use log::{debug, error, info, warn};
 
 use diesel::prelude::*;
 
-mod schema;
 mod banlist;
 mod password;
+mod schema;
 mod util;
 
+mod config;
 mod registration_listener;
 mod server_registry;
-mod tracker_listener;
 mod tracker_codec;
-mod config;
+mod tracker_listener;
 
 use registration_listener::RegistrationListener;
 use server_registry::ServerRegistry;
@@ -74,7 +74,7 @@ struct BanlistAddOptions {
     address: String,
 
     /// Notes for this entry in the banlist (a freeform string)
-    #[clap(default_value="")]
+    #[clap(default_value = "")]
     notes: String,
 }
 
@@ -85,9 +85,7 @@ struct BanlistRemoveOptions {
 }
 
 #[derive(Parser, Debug)]
-struct BanlistListOptions {
-    
-}
+struct BanlistListOptions {}
 
 // /banlist ----------------------
 
@@ -116,7 +114,7 @@ struct PasswordAddOptions {
     password: String,
 
     /// Notes about this password entry (a freeform string)
-    #[clap(default_value="")]
+    #[clap(default_value = "")]
     notes: String,
 }
 
@@ -127,10 +125,7 @@ struct PasswordRemoveOptions {
 }
 
 #[derive(Parser, Debug)]
-struct PasswordListOptions {
-
-}
-
+struct PasswordListOptions {}
 
 // /password ---------------------
 
@@ -182,20 +177,17 @@ struct App {
 async fn main() {
     let app = App::parse();
 
-    let env = Env::default()
-        .filter_or("TRACKER_LOG_LEVEL", "info");
+    let env = Env::default().filter_or("TRACKER_LOG_LEVEL", "info");
     Builder::from_env(env).init();
 
     // try to find the config
     // if it's set on the CLI, use that
     // otherwise fall back to config::find_config()
     // and if that doesn't find it, default to current directory
-    let config_path = app.config
-        .or_else(config::find_config)
-        .unwrap_or_else(|| {
-            debug!("Using current directory for data/config.");
-            format!("./{}", config::DEFAULT_CONFIG_FILENAME)
-        });
+    let config_path = app.config.or_else(config::find_config).unwrap_or_else(|| {
+        debug!("Using current directory for data/config.");
+        format!("./{}", config::DEFAULT_CONFIG_FILENAME)
+    });
 
     let mut config = config::load(config_path).unwrap();
 
@@ -212,12 +204,9 @@ async fn main() {
     let connection = open_db(&config.database);
 
     match app.subcommand {
-        Subcommand::Start(opts) =>
-            handle_start(connection, opts, config).await.unwrap(),
-        Subcommand::Banlist(opts) =>
-            handle_banlist(connection, opts).await.unwrap(),
-        Subcommand::Password(opts) =>
-            handle_password(connection, opts).await.unwrap(),
+        Subcommand::Start(opts) => handle_start(connection, opts, config).await.unwrap(),
+        Subcommand::Banlist(opts) => handle_banlist(connection, opts).await.unwrap(),
+        Subcommand::Password(opts) => handle_password(connection, opts).await.unwrap(),
     }
 }
 
@@ -226,7 +215,11 @@ fn open_db(database: &str) -> SqliteConnection {
     SqliteConnection::establish(database).unwrap()
 }
 
-async fn handle_start(db: SqliteConnection, opts: StartOptions, mut config: Config) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_start(
+    db: SqliteConnection,
+    opts: StartOptions,
+    mut config: Config,
+) -> Result<(), Box<dyn std::error::Error>> {
     if let Some(bind_address) = opts.bind_address {
         config.bind_address = bind_address;
     }
@@ -245,10 +238,11 @@ async fn handle_start(db: SqliteConnection, opts: StartOptions, mut config: Conf
 
     if config.require_password && passwordcount == 0 {
         warn!("Password is required but no passwords in database. Use 'password add <password>' to add new passwords.");
-    } else if ! config.require_password && passwordcount > 0 {
-        warn!("Password is not required but there are {passwordcount} password(s) in the database.");
+    } else if !config.require_password && passwordcount > 0 {
+        warn!(
+            "Password is not required but there are {passwordcount} password(s) in the database."
+        );
     }
-
 
     // print some info
     info!("bind address: {}", config.bind_address);
@@ -258,8 +252,18 @@ async fn handle_start(db: SqliteConnection, opts: StartOptions, mut config: Conf
 
     let registry = Arc::new(Mutex::new(ServerRegistry::new()));
 
-    let mut registration_listener = RegistrationListener::new(&config.bind_address, RegistrationListener::REGISTRATION_LISTEN_PORT, tx).await?;
-    let tracker_server = TrackerListener::new(&config.bind_address, TrackerListener::TRACKER_LISTEN_PORT, registry.clone()).await?;
+    let mut registration_listener = RegistrationListener::new(
+        &config.bind_address,
+        RegistrationListener::REGISTRATION_LISTEN_PORT,
+        tx,
+    )
+    .await?;
+    let tracker_server = TrackerListener::new(
+        &config.bind_address,
+        TrackerListener::TRACKER_LISTEN_PORT,
+        registry.clone(),
+    )
+    .await?;
 
     // listen for listing connections
     tokio::spawn(async move {
@@ -267,7 +271,7 @@ async fn handle_start(db: SqliteConnection, opts: StartOptions, mut config: Conf
             Ok(_) => {
                 info!("Tracker server completed. Exiting.");
                 process::exit(0);
-            },
+            }
             Err(e) => {
                 error!("Tracker server failed: {:?}", e);
                 process::exit(1);
@@ -282,7 +286,7 @@ async fn handle_start(db: SqliteConnection, opts: StartOptions, mut config: Conf
             Ok(_) => {
                 info!("Registration server completed. Exiting.");
                 process::exit(0);
-            },
+            }
             Err(e) => {
                 error!("Registration server failed: {:?}", e);
                 process::exit(1);
@@ -296,8 +300,11 @@ async fn handle_start(db: SqliteConnection, opts: StartOptions, mut config: Conf
     // otherwise add to the registry
     while let Some((addr, r)) = rx.recv().await {
         // validate credentials
-        if config.require_password && ! Password::is_authorized(&db, &r.password).unwrap() {
-            warn!("Rejected record [bad credentials]: {} @ {addr}:{}", r.name, r.port);
+        if config.require_password && !Password::is_authorized(&db, &r.password).unwrap() {
+            warn!(
+                "Rejected record [bad credentials]: {} @ {addr}:{}",
+                r.name, r.port
+            );
             continue;
         }
 
@@ -306,13 +313,13 @@ async fn handle_start(db: SqliteConnection, opts: StartOptions, mut config: Conf
             Ok(true) => {
                 warn!("Rejected record [banned]: {} @ {addr}:{}", r.name, r.port);
                 continue;
-            },
-            Ok(false) => {},
+            }
+            Ok(false) => {}
             Err(err) => {
                 // report the error... skip the entry... move on.
                 error!("Failed to check entry: {err}");
                 continue;
-            },
+            }
         }
 
         // add to registry
@@ -325,36 +332,35 @@ async fn handle_start(db: SqliteConnection, opts: StartOptions, mut config: Conf
     Ok(())
 }
 
-async fn handle_banlist(db: SqliteConnection, opts: BanlistOptions) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_banlist(
+    db: SqliteConnection,
+    opts: BanlistOptions,
+) -> Result<(), Box<dyn std::error::Error>> {
     match opts.subcommand {
-        BanlistSubcommand::Add(s_opts) => {
-            Banlist::add(&db, &s_opts.address, &s_opts.notes)
-                .and_then(|_| {
-                    eprintln!("Added {} to banlist.", s_opts.address);
-                    Ok(())
-                })
-        },
+        BanlistSubcommand::Add(s_opts) => Banlist::add(&db, &s_opts.address, &s_opts.notes)
+            .and_then(|_| {
+                eprintln!("Added {} to banlist.", s_opts.address);
+                Ok(())
+            }),
 
-        BanlistSubcommand::Remove(s_opts) => {
-            Banlist::remove(&db, &s_opts.address)
-                .and_then(|_| {
-                    eprintln!("Removed {} from banlist.", s_opts.address);
-                    Ok(())
-                })
-        },
+        BanlistSubcommand::Remove(s_opts) => Banlist::remove(&db, &s_opts.address).and_then(|_| {
+            eprintln!("Removed {} from banlist.", s_opts.address);
+            Ok(())
+        }),
 
-        BanlistSubcommand::List(s_opts) => {
-            handle_banlist_list(&db, s_opts)
-        },
+        BanlistSubcommand::List(s_opts) => handle_banlist_list(&db, s_opts),
     }
 }
 
-fn handle_banlist_list(db: &SqliteConnection, _opts: BanlistListOptions) -> Result<(), Box<dyn std::error::Error>> {
+fn handle_banlist_list(
+    db: &SqliteConnection,
+    _opts: BanlistListOptions,
+) -> Result<(), Box<dyn std::error::Error>> {
     let banlist = Banlist::list(db)?;
 
     if banlist.is_empty() {
         eprintln!("No servers in banlist.");
-        return Ok(())
+        return Ok(());
     }
 
     // print out the list of banned servers.
@@ -365,36 +371,37 @@ fn handle_banlist_list(db: &SqliteConnection, _opts: BanlistListOptions) -> Resu
     Ok(())
 }
 
-async fn handle_password(db: SqliteConnection, opts: PasswordOptions) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_password(
+    db: SqliteConnection,
+    opts: PasswordOptions,
+) -> Result<(), Box<dyn std::error::Error>> {
     match opts.subcommand {
-        PasswordSubcommand::Add(s_opts) => {
-            Password::add(&db, &s_opts.password, &s_opts.notes)
-                .and_then(|_| {
-                    eprintln!("Added password to the password list.");
-                    Ok(())
-                })
-        },
+        PasswordSubcommand::Add(s_opts) => Password::add(&db, &s_opts.password, &s_opts.notes)
+            .and_then(|_| {
+                eprintln!("Added password to the password list.");
+                Ok(())
+            }),
 
         PasswordSubcommand::Remove(s_opts) => {
-            Password::remove(&db, &s_opts.password)
-                .and_then(|_| {
-                    eprintln!("Removed password from password list.");
-                    Ok(())
-                })
-        },
+            Password::remove(&db, &s_opts.password).and_then(|_| {
+                eprintln!("Removed password from password list.");
+                Ok(())
+            })
+        }
 
-        PasswordSubcommand::List(s_opts) => {
-            handle_password_list(&db, s_opts)
-        },
+        PasswordSubcommand::List(s_opts) => handle_password_list(&db, s_opts),
     }
 }
 
-fn handle_password_list(db: &SqliteConnection, _opts: PasswordListOptions) -> Result<(), Box<dyn std::error::Error>> {
+fn handle_password_list(
+    db: &SqliteConnection,
+    _opts: PasswordListOptions,
+) -> Result<(), Box<dyn std::error::Error>> {
     let passwords = Password::list(db)?;
 
     if passwords.is_empty() {
         eprintln!("No passwords in the database.");
-        return Ok(())
+        return Ok(());
     }
 
     for p in passwords {

@@ -1,16 +1,12 @@
 use std::collections::HashMap;
-use std::net::Ipv4Addr;
 use std::default::Default;
+use std::net::Ipv4Addr;
 
-use tokio::time::{Instant, Duration};
+use tokio::time::{Duration, Instant};
 
 use log::debug;
 
-use hotline_tracker::{
-    ServerRecord,
-    RegistrationRecord,
-    UpdateRecord
-};
+use hotline_tracker::{RegistrationRecord, ServerRecord, UpdateRecord};
 
 #[derive(Debug)]
 pub struct ServerEntry {
@@ -26,7 +22,6 @@ impl ServerEntry {
         }
     }
 }
-
 
 /// servers that connect are listed here
 /// contains a list of servers that have registered, when they last registered
@@ -79,7 +74,8 @@ impl ServerRegistry {
     pub fn create_update_record(&mut self) -> UpdateRecord {
         self.expire();
 
-        let remaining_data_size: u16 = self.servers
+        let remaining_data_size: u16 = self
+            .servers
             .iter()
             .map(|(_, entry)| entry.server.data_size() as u16)
             .sum();
@@ -96,9 +92,9 @@ impl ServerRegistry {
     }
 
     pub fn server_records(&mut self) -> Vec<ServerRecord> {
-        self.servers.iter().map(|(_k, v)| {
-            v.server.clone()
-        })
-        .collect()
+        self.servers
+            .iter()
+            .map(|(_k, v)| v.server.clone())
+            .collect()
     }
 }

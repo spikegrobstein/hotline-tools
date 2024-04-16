@@ -1,4 +1,4 @@
-use bytes::{Buf, BytesMut, BufMut};
+use bytes::{Buf, BufMut, BytesMut};
 
 pub const MAGIC_WORD_LEN: usize = 4;
 pub const MAGIC_WORD: &[u8; MAGIC_WORD_LEN] = b"HTRK";

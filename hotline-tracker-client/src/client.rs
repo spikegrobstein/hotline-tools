@@ -1,12 +1,12 @@
-use bytes::{BytesMut, Buf};
+use bytes::{Buf, BytesMut};
+use tokio::net::TcpStream;
 use tokio_util::codec::Decoder;
 use tokio_util::codec::Framed;
-use tokio::net::TcpStream;
 // use tokio_stream::StreamExt;
 use tokio::io::AsyncWriteExt;
 
-use hotline_tracker::{TrackerPacket, Header, UpdateRecord, ServerRecord};
 use hotline_tracker::header;
+use hotline_tracker::{Header, ServerRecord, TrackerPacket, UpdateRecord};
 
 // establish connection
 // send HELO packet
@@ -34,9 +34,7 @@ impl Client {
 
         // eprintln!("initialized.");
 
-        Ok(Self {
-            framed_stream,
-        })
+        Ok(Self { framed_stream })
     }
 }
 
@@ -74,7 +72,10 @@ impl Decoder for HLTrackerCodec {
                     self.state = State::ReceivedHeader;
                     return Ok(Some(TrackerPacket::Header));
                 } else {
-                    panic!("invalid header {:?} / {}", header.magic_word, header.version);
+                    panic!(
+                        "invalid header {:?} / {}",
+                        header.magic_word, header.version
+                    );
                 }
             }
 
@@ -97,8 +98,7 @@ impl Decoder for HLTrackerCodec {
         if src[0] == 0 {
             // update packet
             // these are exactly 8 bytes so return early if not enough in buffer
-            let update_record = UpdateRecord::from_bytes(src)
-                .map(TrackerPacket::Update);
+            let update_record = UpdateRecord::from_bytes(src).map(TrackerPacket::Update);
             // dbg!(&update_record);
             if let Some(TrackerPacket::Update(ref update)) = update_record {
                 src.advance(update.data_size());
@@ -108,8 +108,8 @@ impl Decoder for HLTrackerCodec {
             Ok(update_record)
         } else {
             // server record
-            let server_record = ServerRecord::from_bytes(src)
-                .map(|s| TrackerPacket::Server(s.into()));
+            let server_record =
+                ServerRecord::from_bytes(src).map(|s| TrackerPacket::Server(s.into()));
 
             if let Some(TrackerPacket::Server(ref server_record)) = server_record {
                 src.advance(server_record.data_size());
@@ -119,6 +119,5 @@ impl Decoder for HLTrackerCodec {
             // dbg!(&server_record);
             Ok(server_record)
         }
-
     }
 }

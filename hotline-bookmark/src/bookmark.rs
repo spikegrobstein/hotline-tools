@@ -1,10 +1,10 @@
-use bytes::{BytesMut, Bytes, BufMut, Buf};
+use bytes::{Buf, BufMut, Bytes, BytesMut};
 use macroman_tools::macroman_to_string;
 
-use std::io::prelude::*;
 use std::fs::File;
+use std::io::prelude::*;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 const BOOKMARK_MAGIC_WORD: &[u8; 4] = b"HTsc";
 const BOOKMARK_VERSION: u16 = 1;
@@ -113,4 +113,3 @@ impl Bookmark {
         f.write(&buf)
     }
 }
-

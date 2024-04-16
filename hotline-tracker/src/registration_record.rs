@@ -1,4 +1,4 @@
-use bytes::{Buf, BytesMut, BufMut};
+use bytes::{Buf, BufMut, BytesMut};
 use macroman_tools::MacRomanString;
 
 use crate::server_record::ServerRecord;
@@ -44,22 +44,22 @@ impl RegistrationRecord {
         // these 15s are the static portion + length bytes (12 + 3)
         if bytes.remaining() < 15 {
             // not enough data for the absolute minimum size
-            return None
+            return None;
         }
 
         let ex_name_len = bytes[12] as usize;
         if bytes.remaining() < 15 + ex_name_len {
-            return None
+            return None;
         }
 
         let ex_desc_len = bytes[12 + 1 + ex_name_len] as usize;
         if bytes.remaining() < 15 + ex_name_len + ex_desc_len {
-            return None
+            return None;
         }
 
         let ex_pass_len = bytes[12 + 1 + ex_name_len + 1 + ex_desc_len] as usize;
         if bytes.remaining() != 15 + ex_name_len + ex_desc_len + ex_pass_len {
-            return None
+            return None;
         }
 
         let version = bytes.get_u16();
@@ -95,7 +95,9 @@ impl RegistrationRecord {
     }
 
     pub fn to_bytes(&self) -> BytesMut {
-        let mut buf = BytesMut::with_capacity(15 + self.name.len() + self.description.len() + self.password.len());
+        let mut buf = BytesMut::with_capacity(
+            15 + self.name.len() + self.description.len() + self.password.len(),
+        );
 
         buf.put_u16(REGISTRY_VERSION);
         buf.put_u16(self.port);

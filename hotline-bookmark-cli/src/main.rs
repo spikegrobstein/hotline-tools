@@ -30,11 +30,11 @@ struct CreateArgs {
     address: String,
 
     /// Username to use to log in to the server
-    #[clap(short, long, default_value="")]
+    #[clap(short, long, default_value = "")]
     username: String,
 
     /// Password to use to log in to the server
-    #[clap(short, long, default_value="")]
+    #[clap(short, long, default_value = "")]
     password: String,
 }
 
@@ -57,12 +57,8 @@ fn main() {
     let args = Args::parse();
 
     let result = match args.subcommand {
-        Subcommand::Print(print_args) => {
-            print_bookmark(print_args)
-        },
-        Subcommand::Create(create_args) => {
-            create_bookmark(create_args)
-        },
+        Subcommand::Print(print_args) => print_bookmark(print_args),
+        Subcommand::Create(create_args) => create_bookmark(create_args),
     };
 
     if let Err(err) = result {

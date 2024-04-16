@@ -2,8 +2,8 @@ use serde::Deserialize;
 
 use log::debug;
 
-use std::path::PathBuf;
 use std::fs;
+use std::path::PathBuf;
 
 pub const DEFAULT_CONFIG_FILENAME: &str = "tracker.toml";
 
@@ -28,7 +28,7 @@ pub struct Config {
 
 #[derive(Deserialize)]
 pub struct ParsedConfig {
-    server: ParsedServerConfig
+    server: ParsedServerConfig,
 }
 
 #[derive(Deserialize)]
@@ -80,13 +80,12 @@ pub fn find_config() -> Option<String> {
 pub fn load(path: String) -> Result<Config, Box<dyn std::error::Error>> {
     let config_path = PathBuf::from(&path);
 
-    if ! config_path.exists() {
+    if !config_path.exists() {
         debug!("{path}: Config does't exist. Using default config.");
 
         let base_path = config_path.parent().unwrap();
         let mut database = base_path.to_path_buf();
         database.push("tracker.sqlite3");
-
 
         // just return the default
         return Ok(Config {
@@ -95,7 +94,7 @@ pub fn load(path: String) -> Result<Config, Box<dyn std::error::Error>> {
             bind_address: "0.0.0.0".into(),
             require_password: false,
             database: database.to_str().unwrap().into(),
-        })
+        });
     }
 
     debug!("Using config: {path}");
@@ -106,7 +105,8 @@ pub fn load(path: String) -> Result<Config, Box<dyn std::error::Error>> {
 
     let base_path = config_path.parent().unwrap();
     let server_config = parsed_config.server;
-    let database = server_config.database
+    let database = server_config
+        .database
         .map(|db| {
             let database = PathBuf::from(&db);
 
@@ -120,16 +120,22 @@ pub fn load(path: String) -> Result<Config, Box<dyn std::error::Error>> {
                 // it's relative... so it should be relative to our base_path
                 let mut database = base_path.to_path_buf();
                 database.push(db);
-                fs::canonicalize(&database).unwrap().to_str().unwrap().into()
+                fs::canonicalize(&database)
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .into()
             }
         })
         .unwrap_or_else(|| {
-        let mut database = base_path.to_path_buf();
-        database.push("tracker.sqlite3");
-        database.to_str().unwrap().into()
-    });
+            let mut database = base_path.to_path_buf();
+            database.push("tracker.sqlite3");
+            database.to_str().unwrap().into()
+        });
 
-    let bind_address = server_config.bind_address.unwrap_or_else(|| "0.0.0.0".into());
+    let bind_address = server_config
+        .bind_address
+        .unwrap_or_else(|| "0.0.0.0".into());
     let require_password = server_config.require_password.unwrap_or(false);
 
     Ok(Config {

@@ -1,5 +1,5 @@
+use hotline_tracker::{Header, TrackerPacket};
 use tokio_util::codec::{Decoder, Encoder};
-use hotline_tracker::{TrackerPacket, Header};
 
 use bytes::BytesMut;
 
@@ -35,7 +35,7 @@ pub enum CodecError {
     UnexpectedData,
 
     #[error("IO Error")]
-    IoError(#[from] std::io::Error)
+    IoError(#[from] std::io::Error),
 }
 
 impl Decoder for TrackerCodec {
@@ -47,13 +47,13 @@ impl Decoder for TrackerCodec {
             if let Some(header) = Header::from_bytes(src) {
                 if header.is_valid() {
                     self.state = State::ReceivedHeader;
-                    return Ok(Some(TrackerPacket::Header))
+                    return Ok(Some(TrackerPacket::Header));
                 }
 
                 return Err(CodecError::InvalidHeader(header.magic_word, header.version));
             }
 
-            return Err(CodecError::NoHeader)
+            return Err(CodecError::NoHeader);
         }
 
         Err(CodecError::UnexpectedData)
@@ -68,17 +68,16 @@ impl Encoder<TrackerPacket> for TrackerCodec {
             TrackerPacket::Header => {
                 let header = Header::default();
                 header.put_slice(dst);
-            },
+            }
             TrackerPacket::Update(update) => {
                 update.put_slice(dst);
-            },
+            }
             TrackerPacket::Server(server) => {
                 server.put_slice(dst);
-            },
-            TrackerPacket::Complete => {}, // no-op
+            }
+            TrackerPacket::Complete => {} // no-op
         }
 
         Ok(())
     }
 }
-

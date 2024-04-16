@@ -1,12 +1,12 @@
-mod update_record;
-mod server_record;
-mod registration_record;
 pub mod header;
+mod registration_record;
+mod server_record;
+mod update_record;
 
-pub use update_record::UpdateRecord;
-pub use server_record::ServerRecord;
-pub use registration_record::RegistrationRecord;
 pub use header::Header;
+pub use registration_record::RegistrationRecord;
+pub use server_record::ServerRecord;
+pub use update_record::UpdateRecord;
 
 #[derive(Debug)]
 pub enum TrackerPacket {
@@ -15,4 +15,3 @@ pub enum TrackerPacket {
     Server(Box<ServerRecord>),
     Complete,
 }
-

@@ -1,6 +1,6 @@
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use tokio::net::UdpSocket;
 use tokio::sync::mpsc::Sender;
-use std::net::{SocketAddr, IpAddr, Ipv4Addr};
 
 use hotline_tracker::RegistrationRecord;
 
@@ -21,7 +21,11 @@ pub struct RegistrationListener {
 impl RegistrationListener {
     pub const REGISTRATION_LISTEN_PORT: u16 = 5499;
 
-    pub async fn new(addr: &str, port: u16, sender: Sender<(Ipv4Addr, RegistrationRecord)>) -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn new(
+        addr: &str,
+        port: u16,
+        sender: Sender<(Ipv4Addr, RegistrationRecord)>,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
         let interface = addr.parse::<IpAddr>()?;
         let sockaddr = SocketAddr::new(interface, port);
 
@@ -44,7 +48,7 @@ impl RegistrationListener {
             if let SocketAddr::V4(addr) = addr {
                 self.sender.send((*addr.ip(), r)).await?;
             } else {
-                return Err(Box::new(RegistrationListenerError::UnsupportedProtocol))
+                return Err(Box::new(RegistrationListenerError::UnsupportedProtocol));
             }
         }
     }

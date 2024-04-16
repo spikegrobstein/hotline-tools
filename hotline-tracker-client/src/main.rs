@@ -6,7 +6,7 @@ mod client;
 
 use client::Client;
 
-use hotline_tracker::{TrackerPacket, UpdateRecord, RegistrationRecord};
+use hotline_tracker::{RegistrationRecord, TrackerPacket, UpdateRecord};
 use macroman_tools::MacRomanString;
 
 use clap::Parser;
@@ -33,18 +33,18 @@ struct RegisterArgs {
     description: String,
 
     /// The port for your Hotline server
-    #[clap(short, long, default_value="5500")]
+    #[clap(short, long, default_value = "5500")]
     port: u16,
 
     /// [Required] Number of users currently connected to this server.
-    #[clap(long, default_value="0")]
+    #[clap(long, default_value = "0")]
     user_count: u16,
 
     /// [Required] The unique ID for this server
     #[clap(long)]
     id: u32,
 
-    #[clap(long, default_value="")]
+    #[clap(long, default_value = "")]
     password: String,
 }
 
@@ -68,12 +68,8 @@ async fn main() {
     let args = Args::parse();
 
     let result = match args.subcommand {
-        Subcommand::List(list_args) => {
-            list_tracker(&list_args).await
-        },
-        Subcommand::Register(register_args) => {
-            register(&register_args).await
-        },
+        Subcommand::List(list_args) => list_tracker(&list_args).await,
+        Subcommand::Register(register_args) => register(&register_args).await,
     };
 
     if let Err(err) = result {
@@ -96,18 +92,18 @@ async fn list_tracker(args: &ListArgs) -> Result<(), Box<dyn std::error::Error>>
                 // println!("got update:");
                 // println!("  users_online:  {}", update.users_online);
                 // println!("  total_servers: {}", update.total_servers);
-            },
+            }
             Ok(TrackerPacket::Server(server)) => {
                 servers.push(server);
                 // println!("{} [{}:{}]", server.name, server.address, server.port);
                 // println!("  {}", server.description);
-            },
+            }
             Ok(TrackerPacket::Header) => {
                 // eprintln!("connected!");
-            },
+            }
             Ok(TrackerPacket::Complete) => {
                 break;
-            },
+            }
             Err(err) => {
                 panic!("got something else: {err}");
             }
@@ -122,7 +118,8 @@ async fn list_tracker(args: &ListArgs) -> Result<(), Box<dyn std::error::Error>>
 
     // now that this completed, let's print out all of the servers we got
     for s in servers {
-        println!("{} [{}] ({} Users)", 
+        println!(
+            "{} [{}] ({} Users)",
             bold(&s.name.as_string()),
             s.address_with_port(),
             s.users_online,
@@ -132,9 +129,7 @@ async fn list_tracker(args: &ListArgs) -> Result<(), Box<dyn std::error::Error>>
     if let Some(last_update) = last_update {
         // print the final update
         println!();
-        println!("{} Total servers.",
-            last_update.total_servers
-        );
+        println!("{} Total servers.", last_update.total_servers);
     }
 
     Ok(())

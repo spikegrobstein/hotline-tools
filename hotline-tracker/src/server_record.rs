@@ -1,4 +1,4 @@
-use bytes::{Buf, BytesMut, BufMut};
+use bytes::{Buf, BufMut, BytesMut};
 use macroman_tools::MacRomanString;
 
 use std::net::Ipv4Addr;
@@ -31,7 +31,8 @@ impl ServerRecord {
         // first, let's make sure we have enough bytes in the buffer
         // to do this, we have to make sure we can read the name_len field
         // then that we have enough bytes to read that + desc_len + desc
-        if bytes.remaining() < 12 { // name_len + 1 (desc_len)
+        if bytes.remaining() < 12 {
+            // name_len + 1 (desc_len)
             return None;
         }
 
@@ -55,7 +56,7 @@ impl ServerRecord {
             bytes.get_u8(),
             bytes.get_u8(),
             bytes.get_u8(),
-            bytes.get_u8()
+            bytes.get_u8(),
         );
         // eprintln!("address: {address}");
         let port = bytes.get_u16();

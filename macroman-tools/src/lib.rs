@@ -1,4 +1,4 @@
-use bytes::{Bytes, BufMut, BytesMut};
+use bytes::{BufMut, Bytes, BytesMut};
 
 use std::convert::From;
 use std::fmt;
@@ -234,29 +234,27 @@ pub const MACROMAN_TABLE: &[(u8, char)] = &[
 ];
 
 pub fn macroman_to_char(c: u8) -> char {
-    MACROMAN_TABLE.iter()
+    MACROMAN_TABLE
+        .iter()
         .find(|(code, _)| *code == c)
         .map(|(_, unicode)| *unicode)
         .unwrap_or(c as char)
 }
 
 pub fn char_to_macroman(c: char) -> u8 {
-    MACROMAN_TABLE.iter()
+    MACROMAN_TABLE
+        .iter()
         .find(|(_, unicode)| *unicode == c)
         .map(|(char, _)| *char)
         .unwrap_or(c as u8)
 }
 
 pub fn macroman_to_string(s: &[u8]) -> String {
-    s.iter()
-        .map(|c| macroman_to_char(*c))
-        .collect()
+    s.iter().map(|c| macroman_to_char(*c)).collect()
 }
 
 pub fn string_to_macroman(s: &str) -> Vec<u8> {
-    s.chars()
-        .map(char_to_macroman)
-        .collect()
+    s.chars().map(char_to_macroman).collect()
 }
 
 // this approach was lifted from arrayvec::ArrayString
@@ -303,7 +301,7 @@ impl<const CAP: usize> From<&[u8]> for MacRomanString<CAP> {
     }
 }
 
-impl<const CAP:usize> fmt::Display for MacRomanString<CAP> {
+impl<const CAP: usize> fmt::Display for MacRomanString<CAP> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.as_string())
     }
@@ -333,7 +331,7 @@ impl<const CAP: usize> MacRomanString<CAP> {
 
     pub fn as_string(&self) -> String {
         macroman_to_string(self.as_bytes())
-    } 
+    }
 
     pub fn as_bytes(&self) -> &[u8] {
         &self.inner[..(self.len as usize)]
@@ -344,7 +342,6 @@ impl<const CAP: usize> MacRomanString<CAP> {
         buf.put_slice(self.as_bytes());
     }
 }
-
 
 #[cfg(test)]
 mod tests {

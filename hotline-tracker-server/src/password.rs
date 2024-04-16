@@ -15,7 +15,7 @@ pub struct Password {
 }
 
 #[derive(Insertable)]
-#[table_name="passwords"]
+#[table_name = "passwords"]
 struct NewPasswordEntry<'a> {
     password: &'a str,
     notes: &'a str,
@@ -23,19 +23,27 @@ struct NewPasswordEntry<'a> {
 }
 
 impl Password {
-    pub fn is_authorized(db: &SqliteConnection, provided_password: &MacRomanString<255>) -> Result<bool, Box<dyn std::error::Error>> {
+    pub fn is_authorized(
+        db: &SqliteConnection,
+        provided_password: &MacRomanString<255>,
+    ) -> Result<bool, Box<dyn std::error::Error>> {
         use crate::schema::passwords::dsl::*;
 
         let provided_password = provided_password.as_string();
 
-        let results = passwords.filter(password.eq(provided_password))
+        let results = passwords
+            .filter(password.eq(provided_password))
             .limit(1)
             .load::<Password>(db)?;
 
         Ok(results.len() == 1)
     }
 
-    pub fn add(db: &SqliteConnection, password: &str, notes: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn add(
+        db: &SqliteConnection,
+        password: &str,
+        notes: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let new_password = NewPasswordEntry {
             password,
             notes,
@@ -49,11 +57,13 @@ impl Password {
         Ok(())
     }
 
-    pub fn remove(db: &SqliteConnection, password_to_delete: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn remove(
+        db: &SqliteConnection,
+        password_to_delete: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         use crate::schema::passwords::dsl::*;
 
-        diesel::delete(passwords.filter(password.eq(password_to_delete)))
-            .execute(db)?;
+        diesel::delete(passwords.filter(password.eq(password_to_delete))).execute(db)?;
 
         Ok(())
     }
@@ -61,8 +71,7 @@ impl Password {
     pub fn list(db: &SqliteConnection) -> Result<Vec<Password>, Box<dyn std::error::Error>> {
         use crate::schema::passwords::dsl::*;
 
-        let results = passwords
-            .load::<Password>(db)?;
+        let results = passwords.load::<Password>(db)?;
 
         Ok(results)
     }
@@ -71,9 +80,7 @@ impl Password {
         use crate::schema::passwords::dsl::*;
 
         // FIXME: surely there's a better way to do this.
-        let result = passwords.filter(id.gt(0))
-            .count()
-            .first(db)?;
+        let result = passwords.filter(id.gt(0)).count().first(db)?;
 
         Ok(result)
     }

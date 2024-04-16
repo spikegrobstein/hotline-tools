@@ -15,7 +15,7 @@ pub struct Banlist {
 }
 
 #[derive(Insertable)]
-#[table_name="banlist"]
+#[table_name = "banlist"]
 struct NewBanlistEntry<'a> {
     address: &'a str,
     notes: &'a str,
@@ -23,19 +23,27 @@ struct NewBanlistEntry<'a> {
 }
 
 impl Banlist {
-    pub fn is_banned(db: &SqliteConnection, addr: &Ipv4Addr) -> Result<bool, Box<dyn std::error::Error>> {
+    pub fn is_banned(
+        db: &SqliteConnection,
+        addr: &Ipv4Addr,
+    ) -> Result<bool, Box<dyn std::error::Error>> {
         use crate::schema::banlist::dsl::*;
 
         let addr_str: String = format!("{addr}");
 
-        let results = banlist.filter(address.eq(addr_str))
+        let results = banlist
+            .filter(address.eq(addr_str))
             .limit(1)
             .load::<Banlist>(db)?;
 
         Ok(results.len() == 1)
     }
 
-    pub fn add(db: &SqliteConnection, address: &str, notes: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn add(
+        db: &SqliteConnection,
+        address: &str,
+        notes: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         // todo: add a better validation error here
         let _: Ipv4Addr = address.parse()?;
 
@@ -55,8 +63,7 @@ impl Banlist {
     pub fn remove(db: &SqliteConnection, addr: &str) -> Result<(), Box<dyn std::error::Error>> {
         use crate::schema::banlist::dsl::*;
 
-        diesel::delete(banlist.filter(address.eq(addr)))
-            .execute(db)?;
+        diesel::delete(banlist.filter(address.eq(addr))).execute(db)?;
 
         Ok(())
     }
@@ -64,8 +71,7 @@ impl Banlist {
     pub fn list(db: &SqliteConnection) -> Result<Vec<Banlist>, Box<dyn std::error::Error>> {
         use crate::schema::banlist::dsl::*;
 
-        let results = banlist
-            .load::<Banlist>(db)?;
+        let results = banlist.load::<Banlist>(db)?;
 
         Ok(results)
     }
@@ -74,9 +80,7 @@ impl Banlist {
         use crate::schema::banlist::dsl::*;
 
         // FIXME: surely there's a better way to do this.
-        let result = banlist.filter(id.gt(0))
-            .count()
-            .first(db)?;
+        let result = banlist.filter(id.gt(0)).count().first(db)?;
 
         Ok(result)
     }
